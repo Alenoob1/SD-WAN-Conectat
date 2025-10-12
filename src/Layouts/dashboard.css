@@ -1,0 +1,151 @@
+/* 🌐 Fondo general */
+.dashboard-container {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  font-family: "Segoe UI", sans-serif;
+}
+
+/* 🔵 Barra superior (navbar) */
+.custom-navbar {
+  height: 70px;
+  background: linear-gradient(90deg, #0f172a, #1e293b);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.custom-navbar h4 {
+  font-weight: 700;
+}
+
+.text-info {
+  color: #38bdf8 !important;
+}
+
+/* ⚡ Cuadros tipo SmartOLT */
+.smartolt-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  padding: 1rem;
+  text-align: center;
+  transition: all 0.25s ease-in-out;
+  cursor: pointer;
+  border: 1px solid #e2e8f0;
+  height: 140px; /* 👈 Tarjeta más compacta */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.smartolt-card:hover {
+  transform: scale(1.04);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Márgenes entre tarjetas */
+.row.g-3.mb-4 > div {
+  padding: 0.5rem 0.75rem !important;
+}
+
+/* Bordes superiores de colores */
+.smartolt-card:nth-child(1) {
+  border-top: 4px solid #3b82f6;
+}
+.smartolt-card:nth-child(2) {
+  border-top: 4px solid #22c55e;
+}
+.smartolt-card:nth-child(3) {
+  border-top: 4px solid #475569;
+}
+.smartolt-card:nth-child(4) {
+  border-top: 4px solid #f59e0b;
+}
+
+/* Iconos */
+.icon {
+  font-size: 1.5rem;
+  margin-bottom: 5px;
+}
+
+.text-primary {
+  color: #3b82f6 !important;
+}
+.text-success {
+  color: #22c55e !important;
+}
+.text-dark {
+  color: #475569 !important;
+}
+.text-warning {
+  color: #f59e0b !important;
+}
+
+/* Títulos y números */
+.smartolt-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #334155;
+}
+
+.smartolt-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.smartolt-details {
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+/* 📊 Gráfica */
+.chart-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+}
+
+.chart-header {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 10px;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0.4rem;
+}
+
+/* 🧩 Lista OLTs */
+.list-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.list-header {
+  font-weight: 600;
+  font-size: 1rem;
+  background-color: #f1f5f9;
+  padding: 0.75rem 1rem;
+  color: #1e293b;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.list-group-item {
+  font-size: 0.9rem;
+  color: #334155;
+  border-color: #e5e7eb;
+}
+
+/* 📆 Footer */
+footer {
+  margin-top: 2rem;
+  color: #6b7280;
+}

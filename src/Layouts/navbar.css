@@ -1,0 +1,9 @@
+.custom-navbar {
+  height: 70px;
+  background-image: url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSrtYUPvZjTUawYSbULk5WMfGKFHMY-jwTlOg&s"); /* pon tu imagen en assets */
+  background-size: cover;
+  background-position: center;
+  color: white;
+  font-family: "Segoe UI", sans-serif;
+  box-shadow: 0px 2px 6px rgba(0,0,0,0.4);
+}
