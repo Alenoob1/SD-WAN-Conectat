@@ -1,226 +1,243 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 type ONU = {
-  id: number;
-  name: string;
+  unique_external_id: string;
   sn: string;
-  onu: string;
-  zone: string;
-  signal: string;
-  vlan: string;
-  type: string;
-  authDate: string;
-};
-
-type ONUDetails = {
-  sn: string;
-  name: string;
-  onu_type_name: string;
   olt_name: string;
   board: string;
   port: string;
   onu: string;
-  signal_1310?: string;
-  signal_1490?: string;
-  vlan?: string;
-  mode?: string;
-  wan_mode?: string;
-  status?: string;
-  authorization_date?: string;
+  onu_type_name: string;
+  zone_name: string;
+  name: string;
+  signal_1310: string;
+  signal_1490: string;
+  status: string;
 };
 
-const OnlineONUs: React.FC = () => {
+const AllONUs: React.FC = () => {
   const [onus, setOnus] = useState<ONU[]>([]);
+  const [filteredOnus, setFilteredOnus] = useState<ONU[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedOnu, setSelectedOnu] = useState<ONUDetails | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalLoading, setModalLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedOlt, setSelectedOlt] = useState("Todos");
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // 🟢 Cargar lista principal de ONUs
-  useEffect(() => {
-    const loadOnus = async () => {
-      try {
-        const res = await fetch("http://localhost:4000/api/onus");
-        const data = await res.json();
+  const navigate = useNavigate();
 
-        const mapped = (data.response || []).map((onu: any, idx: number) => ({
-          id: idx + 1,
-          name: onu.name || "-",
-          sn: onu.sn,
-          onu: `Board ${onu.board} / Port ${onu.port} / ONU ${onu.onu}`,
-          zone: `Zone ${onu.zone_id || "-"}`,
-          signal: onu.status || "Offline",
-          vlan: onu.vlan || "Sin VLAN",
-          type: onu.type || "-",
-          authDate: onu.last_status_change || "-",
-        }));
-
-        setOnus(mapped);
-      } catch (err) {
-        console.error("❌ Error cargando ONUs:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadOnus();
-  }, []);
-
-  // ⚙️ Cargar detalles de una ONU individual
-  const handleView = async (sn: string) => {
+  // 🟢 Cargar ONUs
+  const fetchData = async () => {
     try {
-      setModalOpen(true);
-      setModalLoading(true);
-      const res = await fetch(`http://localhost:4000/api/onus/by-sn/${sn}`);
-      const data = await res.json();
-
-      const o = data.response || data; // en algunos endpoints SmartOLT usa .response
-      const info: ONUDetails = {
-        sn: o.sn,
-        name: o.name || "-",
-        onu_type_name: o.onu_type_name || "-",
-        olt_name: o.olt_name || "-",
-        board: o.board || "-",
-        port: o.port || "-",
-        onu: o.onu || "-",
-        signal_1310: o.signal_1310 || "-",
-        signal_1490: o.signal_1490 || "-",
-        vlan: o.service_ports?.[0]?.vlan || "-",
-        mode: o.mode || "-",
-        wan_mode: o.wan_mode || "-",
-        status: o.status || "-",
-        authorization_date: o.authorization_date || "-",
-      };
-
-      setSelectedOnu(info);
+      setLoading(true);
+      const res = await fetch("http://localhost:4000/api/onus/details");
+      const json = await res.json();
+      const list = json?.response?.onus || json?.onus || [];
+      setOnus(list);
+      setFilteredOnus(list);
     } catch (err) {
-      console.error("❌ Error cargando detalles de ONU:", err);
+      console.error("Error cargando ONUs:", err);
+      toast.error("Error al cargar las ONUs ❌");
     } finally {
-      setModalLoading(false);
+      setLoading(false);
     }
   };
 
-  // 🎨 Modal de Detalles
-  const Modal = () => {
-    if (!selectedOnu) return null;
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white w-full max-w-lg rounded-xl shadow-xl p-6 relative">
-          <button
-            className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
-            onClick={() => setModalOpen(false)}
-          >
-            ✖
-          </button>
-          <h3 className="text-xl font-bold text-gray-800 mb-4">
-            ONU Details – {selectedOnu.sn}
-          </h3>
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-          {modalLoading ? (
-            <div className="flex justify-center py-10">
-              <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div><strong>Name:</strong> {selectedOnu.name}</div>
-              <div><strong>Type:</strong> {selectedOnu.onu_type_name}</div>
-              <div><strong>OLT:</strong> {selectedOnu.olt_name}</div>
-              <div><strong>Board:</strong> {selectedOnu.board}</div>
-              <div><strong>Port:</strong> {selectedOnu.port}</div>
-              <div><strong>ONU:</strong> {selectedOnu.onu}</div>
-              <div><strong>Status:</strong> {selectedOnu.status}</div>
-              <div><strong>VLAN:</strong> {selectedOnu.vlan}</div>
-              <div><strong>Mode:</strong> {selectedOnu.mode}</div>
-              <div><strong>WAN Mode:</strong> {selectedOnu.wan_mode}</div>
-              <div><strong>Signal 1310:</strong> {selectedOnu.signal_1310} dBm</div>
-              <div><strong>Signal 1490:</strong> {selectedOnu.signal_1490} dBm</div>
-              <div className="col-span-2">
-                <strong>Authorization:</strong> {selectedOnu.authorization_date}
-              </div>
-            </div>
-          )}
+  // 🔄 Refrescar desde SmartOLT
+  const handleForceRefresh = async () => {
+    try {
+      setRefreshing(true);
+      toast.info("Actualizando datos directamente desde SNMP ⏳");
+
+      const res = await fetch("http://localhost:4000/api/onus/force-refresh", {
+        method: "POST",
+      });
+      const data = await res.json();
+
+      if (data.status) {
+        toast.success(`Caché actualizado: ${data.total} ONUs recargadas 🚀`);
+        await fetchData();
+      } else {
+        toast.warning(data.message || "SmartOLT sigue en límite horario ⚠️");
+      }
+    } catch (err) {
+      toast.error("Error al intentar refrescar datos desde SNMP ❌");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // 🧠 Filtrar ONUs
+  useEffect(() => {
+    let filtered = [...onus];
+
+    if (selectedOlt !== "Todos") {
+      filtered = filtered.filter(
+        (o) => o.olt_name?.toLowerCase() === selectedOlt.toLowerCase()
+      );
+    }
+
+    if (searchTerm.trim() !== "") {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (o) =>
+          o.name?.toLowerCase().includes(term) ||
+          o.sn?.toLowerCase().includes(term) ||
+          o.zone_name?.toLowerCase().includes(term)
+      );
+    }
+
+    setFilteredOnus(filtered);
+  }, [selectedOlt, searchTerm, onus]);
+
+  // 🕓 Pantalla de carga
+  if (loading)
+    return (
+      <div className="flex justify-center items-center h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando ONUs...</p>
         </div>
       </div>
     );
-  };
 
-  // 🧱 Tabla principal
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <h2 className="text-xl font-semibold text-gray-800 mb-3">ONUs Online</h2>
+      <ToastContainer position="top-right" autoClose={2500} />
 
-      {loading ? (
-        <div className="flex justify-center py-20">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-blue-600"></div>
+      {/* ──────────────── Encabezado ──────────────── */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+        <h1 className="text-2xl font-bold text-gray-800">
+          Todas las ONUs - SmartOLT
+        </h1>
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* 🏠 Botón para regresar al Dashboard */}
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white font-semibold rounded-lg shadow-md transition-all"
+          >
+            ⬅️ Volver al Dashboard
+          </button>
+
+          {/* Filtro OLT */}
+          <div className="flex items-center gap-2">
+            <label className="text-gray-700 font-medium">OLT:</label>
+            <select
+              className="border border-gray-300 rounded-lg px-4 py-2 bg-white text-gray-700 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+              value={selectedOlt}
+              onChange={(e) => setSelectedOlt(e.target.value)}
+            >
+              <option value="Todos">Todos</option>
+              <option value="POAQUIL">Poaquil</option>
+              <option value="COMALAPA">Comalapa</option>
+            </select>
+          </div>
+
+          {/* Buscador */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Buscar por nombre, SN o zona..."
+              className="border border-gray-300 rounded-lg px-4 py-2 pl-10 bg-white text-gray-700 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition w-72"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
+          </div>
+
+          {/* Botón Refrescar */}
+          <button
+            onClick={handleForceRefresh}
+            disabled={refreshing}
+            className={`px-4 py-2 rounded-lg font-semibold text-white shadow-sm transition-all ${
+              refreshing
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700"
+            }`}
+          >
+            {refreshing ? "Actualizando..." : "🔄 Refrescar SNMP"}
+          </button>
         </div>
-      ) : (
-        <div className="overflow-x-auto bg-white shadow-md rounded-lg border border-gray-200">
-          <table className="min-w-full text-sm text-gray-700">
-            <thead className="bg-gray-100 text-gray-700 border-b">
+      </div>
+
+      {/* ──────────────── Tabla ──────────────── */}
+      <div className="overflow-x-auto bg-white rounded-2xl shadow-md border border-gray-200">
+        <table className="min-w-full text-sm text-left text-gray-700">
+          <thead className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+            <tr>
+              <th className="px-4 py-3">SN</th>
+              <th className="px-4 py-3">Nombre</th>
+              <th className="px-4 py-3">OLT</th>
+              <th className="px-4 py-3">Ubicación</th>
+              <th className="px-4 py-3">Tipo</th>
+              <th className="px-4 py-3">RX (1310)</th>
+              <th className="px-4 py-3">TX (1490)</th>
+              <th className="px-4 py-3">Estado</th>
+              <th className="px-4 py-3 text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredOnus.length === 0 ? (
               <tr>
-                {[
-                  "Status",
-                  "View",
-                  "Name",
-                  "SN / MAC",
-                  "ONU",
-                  "Zone",
-                  "Signal",
-                  "VLAN",
-                  "Type",
-                  "Auth Date",
-                ].map((header) => (
-                  <th key={header} className="px-4 py-3 text-left font-semibold">
-                    {header}
-                  </th>
-                ))}
+                <td colSpan={9} className="text-center py-6 text-gray-400">
+                  No hay ONUs que coincidan con la búsqueda.
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {onus.map((onu, i) => (
+            ) : (
+              filteredOnus.map((onu, i) => (
                 <tr
-                  key={onu.id}
-                  className={`border-b hover:bg-gray-50 transition ${
-                    i % 2 === 0 ? "bg-white" : "bg-gray-50"
-                  }`}
+                  key={i}
+                  className="border-b hover:bg-blue-50 transition-all duration-200"
                 >
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-block h-3 w-3 rounded-full ${
-                        onu.signal.toLowerCase() === "online"
-                          ? "bg-green-500"
-                          : "bg-red-500"
-                      }`}
-                    ></span>
+                  <td className="px-4 py-3 font-mono text-sm text-blue-600">
+                    {onu.sn}
                   </td>
+                  <td className="px-4 py-3">{onu.name || "-"}</td>
+                  <td className="px-4 py-3">{onu.olt_name}</td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => handleView(onu.sn)}
-                      className="bg-blue-600 text-white text-xs font-semibold px-4 py-1.5 rounded-md shadow hover:bg-blue-700 transition"
+                    Board {onu.board} / Port {onu.port} / ONU {onu.onu}
+                  </td>
+                  <td className="px-4 py-3">{onu.onu_type_name || "—"}</td>
+                  <td className="px-4 py-3">{onu.signal_1310}</td>
+                  <td className="px-4 py-3">{onu.signal_1490}</td>
+                  <td>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        onu.status?.toLowerCase() === "online"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-600"
+                      }`}
                     >
-                      View
+                      {onu.status || "Desconocido"}
+                    </span>
+                  </td>
+
+                  {/* ✅ Botón Ver - Abre nueva ruta con detalle */}
+                  <td className="text-center">
+                    <button
+                      onClick={() =>
+                        navigate(`/onu/${onu.unique_external_id}`)
+                      }
+                      className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm transition"
+                    >
+                      Ver
                     </button>
                   </td>
-                  <td className="px-4 py-3 font-medium text-gray-800">
-                    {onu.name}
-                  </td>
-                  <td className="px-4 py-3 font-mono">{onu.sn}</td>
-                  <td className="px-4 py-3">{onu.onu}</td>
-                  <td className="px-4 py-3">{onu.zone}</td>
-                  <td className="px-4 py-3 text-green-600">{onu.signal}</td>
-                  <td className="px-4 py-3">{onu.vlan}</td>
-                  <td className="px-4 py-3">{onu.type}</td>
-                  <td className="px-4 py-3 text-gray-600">{onu.authDate}</td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {modalOpen && <Modal />}
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
 
-export default OnlineONUs;
+export default AllONUs;

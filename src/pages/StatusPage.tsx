@@ -1,14 +1,14 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import userPhoto from "../assets/spyese.jpg"; // 👈 Tu logo o imagen
+import userPhoto from "../assets/spyese.jpg";
 
 const StatusPage: React.FC = () => {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    // Aquí podrías limpiar sesiones o tokens si tuvieras autenticación real
-    navigate("/login");
-  };
+  const handleLogout = () => navigate("/login");
+
+  // 👉 redirige al gráfico de tráfico
+  const goToTrafico = () => navigate("/trafico");
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-blue-100 text-gray-800 flex flex-col md:flex-row">
@@ -23,7 +23,7 @@ const StatusPage: React.FC = () => {
           <img
             src={userPhoto}
             alt="Perfil"
-            className="w-16 h-16 md:w-24 md:h-24 rounded-full border-3 border-blue-400 shadow-md hover:scale-105 transition-all duration-300"
+            className="w-16 h-16 md:w-24 md:h-24 rounded-full border-4 border-blue-400 shadow-md hover:scale-105 transition-all duration-300"
           />
           <h2 className="font-semibold text-base md:text-lg mt-2 text-gray-800 text-center">
             Alejandro Calel
@@ -36,25 +36,32 @@ const StatusPage: React.FC = () => {
         {/* Navegación */}
         <nav className="flex flex-col gap-1 md:gap-2 mt-2">
           {[
-            { label: "Inicio", icon: "🏠" },
-            { label: "Mikrotik SD-WAN", icon: "🌐" },
-            { label: "Facturación", icon: "💰" },
-            { label: "OLTs", icon: "🛰️" },
-            { label: "Configuración", icon: "⚙️" },
+            { label: "Inicio", icon: "🏠", route: "/home" },
+            { label: "Xtream IPTV", icon: "📺", route: "/xtream" },
+            { label: "Astra", icon: "🚀", route: "/astra" },
+            { label: "Mikrotik SD-WAN", icon: "🌐", route: "/mikrotik" },
+            { label: "Facturación", icon: "💰", route: "/facturacion" },
+            { label: "OLTs", icon: "🛰️", route: "/dashboard" },
           ].map((item, idx) => (
-            <a
+            <button
               key={idx}
-              href="#"
+              onClick={() => navigate(item.route)}
               className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gradient-to-r hover:from-blue-500 hover:to-sky-400 hover:text-white transition-all text-sm md:text-base"
             >
               <span>{item.icon}</span>
               <span className="font-medium">{item.label}</span>
-            </a>
+            </button>
           ))}
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 hover:bg-gradient-to-r hover:from-red-500 hover:to-rose-500 hover:text-white transition-all text-sm md:text-base mt-3"
+          >
+            🔒 <span className="font-medium">Cerrar sesión</span>
+          </button>
         </nav>
 
         <div className="mt-auto text-[10px] md:text-xs text-center text-gray-500 pt-4 md:pt-6">
-          v2.5.0 | © 2025 AleSmart
+          v2.7.2 | © 2025 AleSmart
         </div>
       </aside>
 
@@ -66,22 +73,15 @@ const StatusPage: React.FC = () => {
             Estado de la <span className="text-blue-600">Red</span>
           </h1>
 
-          {/* Sección derecha: actualización + botón */}
           <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-xs md:text-sm text-gray-500 text-center sm:text-right">
             <p>
               Última actualización:{" "}
-              <span className="text-blue-600 font-medium">hace 3 min</span>
+              <span className="text-blue-600 font-medium">hace 0s</span>
             </p>
-            <button
-              onClick={handleLogout}
-              className="bg-gradient-to-r from-blue-600 to-sky-400 text-white px-4 py-1.5 rounded-lg shadow-md hover:shadow-lg hover:opacity-90 active:scale-95 transition-all duration-300 text-xs md:text-sm font-medium"
-            >
-              Cerrar sesión
-            </button>
           </div>
         </div>
 
-        {/* Tarjetas */}
+        {/* Tarjetas principales */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {[
             {
@@ -92,9 +92,10 @@ const StatusPage: React.FC = () => {
             },
             {
               title: "Tráfico Promedio",
-              value: "210 Mbps",
+              value: "1.15 Gbps",
               color: "from-green-400 to-emerald-500",
               icon: "📶",
+              onClick: goToTrafico, // ✅ al hacer clic entra al gráfico
             },
             {
               title: "Alarmas",
@@ -105,7 +106,12 @@ const StatusPage: React.FC = () => {
           ].map((stat, i) => (
             <div
               key={i}
-              className="rounded-xl bg-white/80 border border-gray-200 shadow-md hover:shadow-lg hover:-translate-y-1 transition-all duration-300 p-5 text-center sm:text-left"
+              onClick={stat.onClick as any}
+              className={`rounded-xl bg-white/80 border border-gray-200 shadow-md transition-all duration-300 p-5 cursor-pointer ${
+                stat.onClick
+                  ? "hover:-translate-y-1 hover:ring-2 hover:ring-blue-300 hover:shadow-lg"
+                  : "hover:shadow"
+              }`}
             >
               <div className="flex justify-between items-center mb-2">
                 <p className="text-xs md:text-sm text-gray-500 font-semibold uppercase tracking-wide">
@@ -154,8 +160,8 @@ const StatusPage: React.FC = () => {
                   {
                     name: "Xtream IPTV Server",
                     ip: "192.168.99.254",
-                    status: "Offline",
-                    ping: "--",
+                    status: "Online",
+                    ping: "10ms",
                   },
                 ].map((dev, i) => (
                   <tr
@@ -165,9 +171,7 @@ const StatusPage: React.FC = () => {
                     <td className="px-4 md:px-6 py-3 font-semibold text-gray-700">
                       {dev.name}
                     </td>
-                    <td className="px-4 md:px-6 py-3 text-gray-600">
-                      {dev.ip}
-                    </td>
+                    <td className="px-4 md:px-6 py-3 text-gray-600">{dev.ip}</td>
                     <td
                       className={`px-4 md:px-6 py-3 font-semibold ${
                         dev.status === "Online"

@@ -147,30 +147,51 @@ const StatusPage: React.FC = () => {
         </div>
 
         {/* Tarjetas */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-          {[
-            // 👉 esta tarjeta ahora redirige a /clientes-activos
-            { title: "Clientes Activos", value: "1,245", color: "from-blue-500 to-sky-400", icon: "👥", onClick: goToClientesActivos },
-            { title: "Tráfico Promedio", value: trafico, color: "from-green-400 to-emerald-500", icon: "📶" },
-            { title: "Alarmas", value: "5", color: "from-rose-400 to-pink-500", icon: "🚨" },
-          ].map((stat, i) => (
-            <div
-              key={i}
-              onClick={stat.onClick as any}
-              className={`rounded-2xl bg-white/80 border border-gray-200 shadow-md transition-all duration-300 p-6
-                ${stat.onClick ? "cursor-pointer hover:shadow-lg hover:-translate-y-1 hover:ring-2 hover:ring-blue-300" : ""}`}
-            >
-              <div className="flex justify-between items-center mb-2">
-                <p className="uppercase text-xs font-semibold text-gray-500">{stat.title}</p>
-                <span className="text-xl">{stat.icon}</span>
-              </div>
-              <h2 className={`text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r ${stat.color} transition-all duration-500`}>
-                {stat.value}
-              </h2>
-            </div>
-          ))}
-        </div>
+       {/* Tarjetas */}
+<div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+  {[
+    { 
+      title: "Clientes Activos", 
+      value: "1,245", 
+      color: "from-blue-500 to-sky-400", 
+      icon: "👥", 
+      onClick: goToClientesActivos 
+    },
+    { 
+      title: "Tráfico Promedio", 
+      value: trafico, 
+      color: "from-green-400 to-emerald-500", 
+      icon: "📶", 
+      onClick: () => navigate("/trafico") // ✅ ahora sí redirige
+    },
+    { 
+  title: "Alarmas", 
+  value: "3", 
+  color: "from-rose-400 to-pink-500", 
+  icon: "🚨", 
+  onClick: () => navigate("/alarmas") 
+},
 
+  ].map((stat, i) => (
+    
+    <div
+      key={i}
+      onClick={stat.onClick as any}
+      className={`rounded-2xl bg-white/80 border border-gray-200 shadow-md transition-all duration-300 p-6
+        ${stat.onClick ? "cursor-pointer hover:shadow-lg hover:-translate-y-1 hover:ring-2 hover:ring-blue-300" : ""}`}
+    >
+      <div className="flex justify-between items-center mb-2">
+        <p className="uppercase text-xs font-semibold text-gray-500">{stat.title}</p>
+        <span className="text-xl">{stat.icon}</span>
+      </div>
+      <h2 className={`text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r ${stat.color} transition-all duration-500`}>
+        {stat.value}
+      </h2>
+    </div>
+  ))}
+</div>
+
+       
         {/* Tabla */}
         <section>
           <h2 className="text-xl md:text-2xl font-bold mb-4 text-blue-700 uppercase tracking-wide">

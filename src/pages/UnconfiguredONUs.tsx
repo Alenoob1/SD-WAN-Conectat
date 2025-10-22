@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 type ONU = {
   id: number;
@@ -13,7 +14,9 @@ type ONU = {
 const UnconfiguredONUs: React.FC = () => {
   const [onus, setOnus] = useState<ONU[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
+  // 🔹 Cargar ONUs desde el backend
   useEffect(() => {
     const loadUnconfiguredOnus = async () => {
       try {
@@ -30,7 +33,6 @@ const UnconfiguredONUs: React.FC = () => {
             type: onu.model || "-",
             status: onu.status || "Disabled",
           }));
-
           setOnus(mapped);
         }
       } catch (err) {
@@ -43,22 +45,29 @@ const UnconfiguredONUs: React.FC = () => {
     loadUnconfiguredOnus();
   }, []);
 
-  const authorizeONU = (sn: string) => {
-    alert(`🔐 Autorizando ONU con SN: ${sn}`);
+  // 🔹 Redirigir al formulario de autorización
+  const handleAuthorize = (onu: ONU) => {
+    navigate(`/authorize-onu/${onu.sn}`, { state: onu });
+  };
+
+  // 🔹 Recargar tabla
+  const handleRefresh = () => {
+    setLoading(true);
+    window.location.reload();
   };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 font-[Inter]">
-      {/* 🔹 Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-slate-800">
+      {/* 🔹 Encabezado */}
+      <div className="flex flex-wrap items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-slate-800 tracking-tight">
           ONUs <span className="text-sky-600">sin autorizar</span>
         </h2>
         <button
-          onClick={() => window.location.reload()}
-          className="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg shadow transition-all"
+          onClick={handleRefresh}
+          className="flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg shadow transition-all"
         >
-          🔄 Refresh
+          <span className="text-lg">🔄</span> Refresh
         </button>
       </div>
 
@@ -75,8 +84,8 @@ const UnconfiguredONUs: React.FC = () => {
         </select>
       </div>
 
-      {/* 🔹 Tabla con estilo SmartOLT */}
-      <div className="bg-white shadow-md rounded-xl overflow-hidden border border-slate-200">
+      {/* 🔹 Tabla */}
+      <div className="bg-white border border-slate-200 shadow-md rounded-xl overflow-hidden">
         <table className="min-w-full text-sm text-slate-700">
           <thead className="bg-sky-600 text-white uppercase text-xs">
             <tr>
@@ -90,11 +99,15 @@ const UnconfiguredONUs: React.FC = () => {
               <th className="py-3 px-4 text-center">Action</th>
             </tr>
           </thead>
+
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={8} className="text-center py-6 text-slate-500 italic">
-                  Cargando ONUs no configuradas...
+                <td colSpan={8} className="py-10 text-center text-slate-500 italic">
+                  <div className="flex justify-center items-center gap-2">
+                    <div className="w-5 h-5 border-2 border-sky-600 border-t-transparent rounded-full animate-spin"></div>
+                    Cargando ONUs no configuradas...
+                  </div>
                 </td>
               </tr>
             ) : onus.length > 0 ? (
@@ -122,8 +135,8 @@ const UnconfiguredONUs: React.FC = () => {
                   </td>
                   <td className="py-3 px-4 text-center">
                     <button
-                      onClick={() => authorizeONU(onu.sn)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-md shadow-sm transition"
+                      onClick={() => handleAuthorize(onu)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-md shadow-sm transition-all"
                     >
                       Authorize
                     </button>
@@ -145,7 +158,7 @@ const UnconfiguredONUs: React.FC = () => {
       </div>
 
       {/* 🔹 Botón inferior */}
-      <div className="text-center mt-6">
+      <div className="text-center mt-8">
         <button className="bg-sky-600 hover:bg-sky-700 text-white font-semibold px-6 py-3 rounded-xl shadow-md transition-all">
           ➕ Add ONU for later authorization
         </button>
