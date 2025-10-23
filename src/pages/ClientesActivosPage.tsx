@@ -1,93 +1,94 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../supabaseClient";
 
-type Onu = {
-  unique_external_id: string;
-  sn: string;
-  olt_name: string;
-  board: string;
-  port: string;
-  onu: string;
-  onu_type_name: string;
-  name: string;
-  status: string;
-  signal: string;
-  signal_1310?: string | null;
-  signal_1490?: string | null;
-  zone_name?: string | null;
-  plan_up?: string | null;
-  plan_down?: string | null;
-  iptv?: string | null;
-  tr069?: string | null;
-  catv?: string | null;
-  authorization_date?: string | null;
-  administrative_status?: string | null;
-  mode?: string | null;
+type Cliente = {
+  id: string;
+  nombre: string;
+  direccion: string;
+  plan: string;
+  mensualidad: string;
+  ip: string;
+  fecha_pago: string;
 };
 
 const PAGE_SIZE = 15;
 
 const ClientesActivosPage: React.FC = () => {
   const navigate = useNavigate();
+  const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<Onu[]>([]);
-  const [q, setQ] = useState("");
-  const [page, setPage] = useState(1);
+  const [busqueda, setBusqueda] = useState("");
+  const [pagina, setPagina] = useState(1);
 
+  // 🔹 Cargar clientes desde Supabase
   useEffect(() => {
-    let alive = true;
-    (async () => {
+    let activo = true;
+    const cargarClientes = async () => {
       try {
         setLoading(true);
-        setError(null);
-        const res = await fetch("http://localhost:4000/api/smartolt/onus");
-        if (!res.ok) {
-          const t = await res.text();
-          throw new Error(t || `HTTP ${res.status}`);
-        }
-        const json = await res.json();
-        if (!alive) return;
-        setData(json.onus || []);
-      } catch (e: any) {
-        setError(e?.message || "Error desconocido");
+        const { data, error } = await supabase
+          .from("clientes")
+          .select("id, nombre, direccion, plan, mensualidad, ip, fecha_pago")
+          .order("nombre", { ascending: true });
+
+        if (error) throw error;
+        if (activo) setClientes(data || []);
+      } catch (err: any) {
+        console.error("Error al cargar clientes:", err.message);
+        setError(err.message);
       } finally {
-        if (alive) setLoading(false);
+        if (activo) setLoading(false);
       }
-    })();
+    };
+    cargarClientes();
     return () => {
-      alive = false;
+      activo = false;
     };
   }, []);
 
-  const filtered = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    if (!term) return data;
-    return data.filter((o) =>
-      [
-        o.name,
-        o.sn,
-        o.unique_external_id,
-        o.olt_name,
-        o.onu_type_name,
-        o.status,
-        o.zone_name,
-      ]
-        .filter(Boolean)
-        .some((field) => String(field).toLowerCase().includes(term))
-    );
-  }, [data, q]);
+  // 🔍 Filtro y orden personalizado
+  const filtrados = useMemo(() => {
+    const term = busqueda.trim().toLowerCase();
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageSafe = Math.min(page, totalPages);
-  const start = (pageSafe - 1) * PAGE_SIZE;
-  const pageRows = filtered.slice(start, start + PAGE_SIZE);
+    // Filtrado por texto
+    let resultado = clientes.filter((c) =>
+      [c.nombre, c.direccion, c.plan, c.ip, c.fecha_pago]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(term))
+    );
+
+    // Reordenar: primero los que tienen nombre, dirección o plan
+    resultado = resultado.sort((a, b) => {
+      const aCompleto =
+        (a.nombre?.trim() || "") !== "" ||
+        (a.direccion?.trim() || "") !== "" ||
+        (a.plan?.trim() || "") !== "";
+      const bCompleto =
+        (b.nombre?.trim() || "") !== "" ||
+        (b.direccion?.trim() || "") !== "" ||
+        (b.plan?.trim() || "") !== "";
+
+      if (aCompleto === bCompleto) return 0;
+      return aCompleto ? -1 : 1; // Los vacíos se van al final
+    });
+
+    return resultado;
+  }, [clientes, busqueda]);
+
+  // 🔢 Paginación
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / PAGE_SIZE));
+  const paginaSegura = Math.min(pagina, totalPaginas);
+  const inicio = (paginaSegura - 1) * PAGE_SIZE;
+  const filas = filtrados.slice(inicio, inicio + PAGE_SIZE);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-blue-100 p-6 md:p-10">
       <div className="max-w-7xl mx-auto">
+        {/* Encabezado */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl md:text-4xl font-extrabold text-gray-800">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-gray-800">
             Clientes <span className="text-blue-600">Activos</span>
           </h1>
           <button
@@ -98,11 +99,14 @@ const ClientesActivosPage: React.FC = () => {
           </button>
         </div>
 
+        {/* Contenedor principal */}
         <div className="rounded-2xl bg-white/90 border border-gray-200 shadow-sm p-4 md:p-6">
-          {/* Controles */}
+          {/* Barra superior */}
           <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between mb-4">
             <div className="text-sm text-gray-600">
-              {loading ? "Cargando…" : `Total: ${filtered.length} ONUs`}
+              {loading
+                ? "Cargando clientes..."
+                : `Total: ${filtrados.length} clientes`}
               {error && (
                 <span className="text-rose-600 font-medium ml-2">
                   (Error: {error})
@@ -110,101 +114,101 @@ const ClientesActivosPage: React.FC = () => {
               )}
             </div>
             <input
-              value={q}
+              value={busqueda}
               onChange={(e) => {
-                setQ(e.target.value);
-                setPage(1);
+                setBusqueda(e.target.value);
+                setPagina(1);
               }}
-              placeholder="Buscar por nombre, SN, OLT, estado…"
+              placeholder="Buscar por nombre, dirección, IP, plan..."
               className="w-full md:w-80 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
           </div>
 
           {/* Tabla */}
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className="w-full text-left text-sm border-collapse">
               <thead className="bg-gradient-to-r from-blue-600 to-sky-400 text-white text-xs uppercase">
                 <tr>
                   <th className="px-4 py-3">Cliente</th>
-                  <th className="px-4 py-3">SN</th>
-                  <th className="px-4 py-3">OLT / PON</th>
-                  <th className="px-4 py-3">Modelo</th>
-                  <th className="px-4 py-3">Estado</th>
-                  <th className="px-4 py-3">Señal</th>
+                  <th className="px-4 py-3">Dirección</th>
                   <th className="px-4 py-3">Plan</th>
+                  <th className="px-4 py-3">Mensualidad (Q)</th>
+                  <th className="px-4 py-3">IP</th>
+                  <th className="px-4 py-3">Fecha de pago</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-6 text-center text-gray-500">
-                      Cargando datos de SmartOLT…
+                    <td
+                      colSpan={6}
+                      className="px-4 py-8 text-center text-gray-500 animate-pulse"
+                    >
+                      Cargando datos de Supabase...
                     </td>
                   </tr>
-                ) : pageRows.length === 0 ? (
+                ) : filas.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-6 text-center text-gray-500">
-                      No hay resultados
+                    <td
+                      colSpan={6}
+                      className="px-4 py-8 text-center text-gray-500"
+                    >
+                      No hay resultados.
                     </td>
                   </tr>
                 ) : (
-                  pageRows.map((o) => {
-                    const estadoColor =
-                      o.status?.toLowerCase().includes("online") ||
-                      o.status?.toLowerCase().includes("working")
-                        ? "text-green-600"
-                        : o.status?.toLowerCase().includes("power")
-                        ? "text-amber-600"
-                        : "text-red-500";
-                    return (
-                      <tr key={o.unique_external_id} className="border-b border-gray-100 hover:bg-sky-50">
-                        <td className="px-4 py-3 font-semibold text-gray-700">{o.name || "-"}</td>
-                        <td className="px-4 py-3">{o.sn}</td>
-                        <td className="px-4 py-3">
-                          <div className="text-gray-700">{o.olt_name}</div>
-                          <div className="text-xs text-gray-500">
-                            B{O(o.board)} / P{O(o.port)} / ONU {O(o.onu)}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">{o.onu_type_name || "-"}</td>
-                        <td className={`px-4 py-3 font-bold ${estadoColor}`}>{o.status || "-"}</td>
-                        <td className="px-4 py-3">
-                          {o.signal || "-"}
-                          <div className="text-xs text-gray-500">
-                            1310: {o.signal_1310 ?? "-"}&nbsp;|&nbsp;1490: {o.signal_1490 ?? "-"}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          {o.plan_down || "-"} / {o.plan_up || "-"}
-                        </td>
-                      </tr>
-                    );
-                  })
+                  filas.map((c) => (
+                    <tr
+                      key={c.id}
+                      className="border-b border-gray-100 hover:bg-sky-50 transition"
+                    >
+                      <td className="px-4 py-3 text-gray-700 font-medium whitespace-nowrap">
+                        {c.nombre || "-"}
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">
+                        {c.direccion || "-"}
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">{c.plan || "-"}</td>
+                      <td className="px-4 py-3 text-gray-700">
+                        {c.mensualidad || "-"}
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">{c.ip || "-"}</td>
+                      <td className="px-4 py-3 text-gray-700">
+                        {c.fecha_pago || "-"}
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
           </div>
 
-          {/* Paginación simple */}
-          {!loading && filtered.length > 0 && (
-            <div className="flex items-center justify-between mt-4">
+          {/* Paginación */}
+          {!loading && filtrados.length > 0 && (
+            <div className="flex items-center justify-between mt-5">
               <button
-                disabled={pageSafe === 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className={`px-3 py-2 rounded-lg border ${
-                  pageSafe === 1 ? "text-gray-400 border-gray-200" : "hover:bg-gray-50"
+                disabled={paginaSegura === 1}
+                onClick={() => setPagina((p) => Math.max(1, p - 1))}
+                className={`px-3 py-2 rounded-lg border text-sm ${
+                  paginaSegura === 1
+                    ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                    : "hover:bg-gray-50 border-gray-300"
                 }`}
               >
                 ← Anterior
               </button>
               <div className="text-sm text-gray-600">
-                Página {pageSafe} de {totalPages}
+                Página {paginaSegura} de {totalPaginas}
               </div>
               <button
-                disabled={pageSafe === totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className={`px-3 py-2 rounded-lg border ${
-                  pageSafe === totalPages ? "text-gray-400 border-gray-200" : "hover:bg-gray-50"
+                disabled={paginaSegura === totalPaginas}
+                onClick={() =>
+                  setPagina((p) => Math.min(totalPaginas, p + 1))
+                }
+                className={`px-3 py-2 rounded-lg border text-sm ${
+                  paginaSegura === totalPaginas
+                    ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                    : "hover:bg-gray-50 border-gray-300"
                 }`}
               >
                 Siguiente →
@@ -216,11 +220,5 @@ const ClientesActivosPage: React.FC = () => {
     </div>
   );
 };
-
-// helper para mostrar 0 cuando falten datos
-function O(v: any) {
-  if (v === undefined || v === null || v === "") return "-";
-  return String(v);
-}
 
 export default ClientesActivosPage;

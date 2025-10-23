@@ -30,7 +30,7 @@ ChartJS.register(
 );
 
 interface OLT {
-  id: number;
+  id: string;
   name: string;
   uptime: string;
   temp: string;
@@ -38,108 +38,95 @@ interface OLT {
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const API_BASE = "http://localhost:4000/api";
 
-  // 📊 Estados principales
   const [stats, setStats] = useState({
     waiting: 0,
     online: 0,
     offline: 0,
     low: 0,
   });
+
   const [olts, setOlts] = useState<OLT[]>([]);
   const [loading, setLoading] = useState(true);
   const [chartLabels, setChartLabels] = useState<string[]>([]);
   const [onlineData, setOnlineData] = useState<number[]>([]);
   const [offlineData, setOfflineData] = useState<number[]>([]);
 
-  // 🧠 Cargar datos iniciales
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const statsRes = await fetch("http://localhost:4000/api/olt/stats");
-        const statsData = await statsRes.json();
+  // 🔹 Cargar estadísticas del backend
+  const loadStats = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/olt/stats`);
+      const data = await res.json();
+
+      if (data) {
         setStats({
-          waiting: statsData.waiting || 0,
-          online: statsData.online || 0,
-          offline: statsData.offline || 0,
-          low: statsData.lowsignal || 0,
+          waiting: data.waiting || 0,
+          online: data.online || 0,
+          offline: data.offline || 0,
+          low: data.lowsignal || 0,
         });
 
-        const resOlts = await fetch("http://localhost:4000/api/olts");
-        const oltsData = await resOlts.json();
-        const mappedOlts = (oltsData.response || []).map(
-          (olt: any, idx: number) => ({
-            id: idx + 1,
-            name: olt.name || `OLT ${idx + 1}`,
-            uptime: olt.uptime || "N/A",
-            temp: olt.temperature ? `${olt.temperature}°C` : "N/A",
-          })
-        );
+        const now = new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+        setChartLabels((prev) => {
+          const updated = [...prev, now];
+          return updated.length > 12 ? updated.slice(-12) : updated;
+        });
+        setOnlineData((prev) => {
+          const updated = [...prev, data.online];
+          return updated.length > 12 ? updated.slice(-12) : updated;
+        });
+        setOfflineData((prev) => {
+          const updated = [...prev, data.offline];
+          return updated.length > 12 ? updated.slice(-12) : updated;
+        });
+      }
+    } catch (err) {
+      console.error("❌ Error al cargar /olt/stats:", err);
+    }
+  };
+
+  // 🔹 Cargar lista de OLTs activas
+  const loadOlts = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/olts/temperature`);
+      const data = await res.json();
+
+      if (data.status && Array.isArray(data.olts)) {
+        const mappedOlts = data.olts.map((olt: any) => ({
+          id: olt.olt_id,
+          name: olt.olt_name || "Sin nombre",
+          uptime: olt.uptime || "N/A",
+          temp: olt.env_temp || "N/A",
+        }));
         setOlts(mappedOlts);
-      } catch (err) {
-        console.error("❌ Error al cargar datos iniciales:", err);
-      } finally {
-        setLoading(false);
+      } else {
+        console.warn("⚠️ No se recibieron datos válidos de las OLTs");
+        setOlts([]);
       }
+    } catch (err) {
+      console.error("⚠️ Error al cargar /olts/temperature:", err);
+    }
+  };
+
+  // 🚀 Cargar datos iniciales
+  useEffect(() => {
+    const init = async () => {
+      await Promise.all([loadStats(), loadOlts()]);
+      setLoading(false);
     };
-    loadData();
-  }, []);
+    init();
 
-  // 🔄 Actualizar stats reales cada minuto
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const statsRes = await fetch("http://localhost:4000/api/olt/stats");
-        const statsData = await statsRes.json();
-        setStats({
-          waiting: statsData.waiting || 0,
-          online: statsData.online || 0,
-          offline: statsData.offline || 0,
-          low: statsData.lowsignal || 0,
-        });
-      } catch (err) {
-        console.error("⚠️ Error al actualizar stats:", err);
-      }
-    }, 60000); // cada 1 minuto
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // 🔁 Simular movimiento cada 10 segundos
-  useEffect(() => {
+    // 🔁 Refrescar estadísticas cada 30 segundos
     const interval = setInterval(() => {
-      const currentTime = new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-
-      const onlineVar = Math.max(
-        stats.online + Math.floor(Math.random() * 5 - 2),
-        0
-      );
-      const offlineVar = Math.max(
-        stats.offline + Math.floor(Math.random() * 3 - 1),
-        0
-      );
-
-      setChartLabels((prev) => {
-        const updated = [...prev, currentTime];
-        return updated.length > 12 ? updated.slice(-12) : updated;
-      });
-
-      setOnlineData((prev) => {
-        const updated = [...prev, onlineVar];
-        return updated.length > 12 ? updated.slice(-12) : updated;
-      });
-
-      setOfflineData((prev) => {
-        const updated = [...prev, offlineVar];
-        return updated.length > 12 ? updated.slice(-12) : updated;
-      });
-    }, 10000);
-
+      loadStats();
+    }, 30000);
     return () => clearInterval(interval);
-  }, [stats]);
+  }, []);
 
   // 📈 Configurar gráfico
   const chartData = {
@@ -238,11 +225,9 @@ const Dashboard: React.FC = () => {
       </div>
 
       <div className="p-6">
-        {/* 🔙 Botón para regresar al HomePage */}
         <div className="flex justify-end mb-4">
           <button
             onClick={() => navigate("/home")}
-
             className="flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 rounded-lg shadow transition"
           >
             <FaHome className="text-lg" />
@@ -260,11 +245,10 @@ const Dashboard: React.FC = () => {
           </div>
         ) : (
           <>
-            {/* 🟩 Tarjetas */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              {cards.map((card, index) => (
+              {cards.map((card, i) => (
                 <div
-                  key={index}
+                  key={i}
                   onClick={() => navigate(card.route)}
                   className={`bg-white rounded-md shadow hover:shadow-lg transition-all duration-200 cursor-pointer text-center py-4 px-2 ${card.color}`}
                 >
@@ -302,7 +286,9 @@ const Dashboard: React.FC = () => {
                         key={olt.id}
                         className="flex justify-between items-center p-3"
                       >
-                        <span>{olt.name}</span>
+                        <span className="font-medium text-gray-800">
+                          {olt.name}
+                        </span>
                         <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs">
                           {olt.uptime} | {olt.temp}
                         </span>
@@ -320,7 +306,7 @@ const Dashboard: React.FC = () => {
         )}
 
         <footer className="text-center mt-6 text-gray-500 text-sm">
-          v2.7.0 | © 2025 AleSmart | SD-WAN & OLT Monitoring
+          v2.7.1 | © 2025 AleSmart | SD-WAN & OLT Monitoring
         </footer>
       </div>
     </div>
