@@ -38,7 +38,7 @@ interface OLT {
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const API_BASE = "http://localhost:4000/api";
+  const API_BASE = import.meta.env.VITE_API_URL; // ✅ variable global
 
   const [stats, setStats] = useState({
     waiting: 0,
@@ -96,9 +96,9 @@ const Dashboard: React.FC = () => {
       const res = await fetch(`${API_BASE}/olts/temperature`);
       const data = await res.json();
 
-      if (data.status && Array.isArray(data.olts)) {
+      if (data?.status && Array.isArray(data.olts)) {
         const mappedOlts = data.olts.map((olt: any) => ({
-          id: olt.olt_id,
+          id: olt.olt_id || String(Math.random()),
           name: olt.olt_name || "Sin nombre",
           uptime: olt.uptime || "N/A",
           temp: olt.env_temp || "N/A",
@@ -122,9 +122,7 @@ const Dashboard: React.FC = () => {
     init();
 
     // 🔁 Refrescar estadísticas cada 30 segundos
-    const interval = setInterval(() => {
-      loadStats();
-    }, 30000);
+    const interval = setInterval(loadStats, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -176,7 +174,6 @@ const Dashboard: React.FC = () => {
     },
   };
 
-  // 📊 Tarjetas principales
   const cards = [
     {
       title: "Waiting Authorization",

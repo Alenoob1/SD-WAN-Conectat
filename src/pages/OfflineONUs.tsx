@@ -18,6 +18,9 @@ type ONU = {
 };
 
 const AllONUs: React.FC = () => {
+  // 🔧 Variable global de entorno
+  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+
   const [onus, setOnus] = useState<ONU[]>([]);
   const [filteredOnus, setFilteredOnus] = useState<ONU[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,13 +33,14 @@ const AllONUs: React.FC = () => {
     setLoading(true);
     try {
       const url = force
-        ? "http://localhost:4000/api/onus/details?force=true"
-        : "http://localhost:4000/api/onus/details";
+        ? `${API_BASE}/onus/details?force=true`
+        : `${API_BASE}/onus/details`;
 
       const res = await fetch(url);
       const json = await res.json();
       const list = json?.response?.onus || json?.onus || [];
 
+      // 🔍 Filtrar ONUs con alarmas LOS o Power Fail
       const alertOnus = list.filter((onu: ONU) => {
         const status = (onu.status || "").toLowerCase();
         return status.includes("los") || status.includes("power fail");
@@ -57,7 +61,7 @@ const AllONUs: React.FC = () => {
     fetchData();
   }, []);
 
-  // 🧠 Filtrar por OLT y texto
+  // 🧩 Filtrar por OLT y texto de búsqueda
   useEffect(() => {
     let filtered = onus;
 
@@ -80,20 +84,20 @@ const AllONUs: React.FC = () => {
     setFilteredOnus(filtered);
   }, [selectedOlt, searchTerm, onus]);
 
-  // 🧩 Refrescar desde SNMP (SmartOLT)
+  // 🔁 Refrescar desde SNMP (SmartOLT)
   const handleRefreshSNMP = async () => {
     try {
       setRefreshing(true);
       toast.info("Consultando SNMP en SmartOLT ⏳", { autoClose: 2000 });
 
-      const res = await fetch("http://localhost:4000/api/onus/force-refresh", {
+      const res = await fetch(`${API_BASE}/onus/force-refresh`, {
         method: "POST",
       });
       const data = await res.json();
 
       if (data.status) {
         toast.success(`Caché actualizado con ${data.total} ONUs nuevas 🚀`);
-        await fetchData(true); // 🔁 vuelve a cargar ignorando caché
+        await fetchData(true);
       } else {
         toast.warning(data.message || "SmartOLT alcanzó límite horario ⚠️");
       }

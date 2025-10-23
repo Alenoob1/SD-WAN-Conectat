@@ -60,17 +60,20 @@ const AuthorizeOnu: React.FC = () => {
     setSubmitting(true);
 
     try {
-      const res = await fetch("http://localhost:4000/api/authorize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          board: Number(form.board),
-          port: Number(form.port),
-          vlan_id: Number(form.vlan_id),
-          svlan: Number(form.svlan), // 👈 importante
-        }),
-      });
+     const res = await fetch(`${import.meta.env.VITE_API_URL}/authorize`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    ...form,
+    board: Number(form.board),
+    port: Number(form.port),
+    vlan_id: Number(form.vlan_id),
+    svlan: Number(form.svlan), // 👉 importante
+  }),
+});
+
 
       const data = await res.json();
 

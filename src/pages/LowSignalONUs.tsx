@@ -19,6 +19,8 @@ type ONU = {
 };
 
 const AllONUs: React.FC = () => {
+  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+
   const [onus, setOnus] = useState<ONU[]>([]);
   const [filteredOnus, setFilteredOnus] = useState<ONU[]>([]);
   const [selectedOlt, setSelectedOlt] = useState("Todos");
@@ -31,13 +33,14 @@ const AllONUs: React.FC = () => {
     setLoading(true);
     try {
       const url = force
-        ? "http://localhost:4000/api/onus/details?force=true"
-        : "http://localhost:4000/api/onus/details";
+        ? `${API_BASE}/onus/details?force=true`
+        : `${API_BASE}/onus/details`;
+
       const res = await fetch(url);
       const json = await res.json();
       const list = json?.response?.onus || json?.onus || [];
 
-      // Filtrar ONUs con mala potencia
+      // 🔎 Filtrar ONUs con potencia baja
       const lowSignal = list.filter((onu: ONU) => {
         const rx = parseFloat(onu.signal_1310);
         const tx = parseFloat(onu.signal_1490);
@@ -59,7 +62,7 @@ const AllONUs: React.FC = () => {
     fetchData();
   }, []);
 
-  // 🧠 Filtrar por OLT o término de búsqueda
+  // 🔍 Filtrar por OLT y búsqueda
   useEffect(() => {
     let filtered = onus;
 
@@ -82,13 +85,13 @@ const AllONUs: React.FC = () => {
     setFilteredOnus(filtered);
   }, [selectedOlt, searchTerm, onus]);
 
-  // 🔁 Refrescar por SNMP
+  // 🔁 Refrescar datos por SNMP
   const handleRefreshSNMP = async () => {
     try {
       setRefreshing(true);
       toast.info("Consultando SmartOLT por SNMP... ⏳", { autoClose: 1800 });
 
-      const res = await fetch("http://localhost:4000/api/onus/force-refresh", {
+      const res = await fetch(`${API_BASE}/onus/force-refresh`, {
         method: "POST",
       });
       const data = await res.json();

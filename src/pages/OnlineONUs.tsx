@@ -19,20 +19,20 @@ type ONU = {
 };
 
 const AllONUs: React.FC = () => {
+  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
   const [onus, setOnus] = useState<ONU[]>([]);
   const [filteredOnus, setFilteredOnus] = useState<ONU[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedOlt, setSelectedOlt] = useState("Todos");
   const [searchTerm, setSearchTerm] = useState("");
-
   const navigate = useNavigate();
 
-  // 🟢 Cargar ONUs
+  // 🟢 Obtener ONUs desde API
   const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://localhost:4000/api/onus/details");
+      const res = await fetch(`${API_BASE}/onus/details`);
       const json = await res.json();
       const list = json?.response?.onus || json?.onus || [];
       setOnus(list);
@@ -45,17 +45,13 @@ const AllONUs: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  // 🔄 Refrescar desde SmartOLT
+  // 🔄 Refrescar datos desde SNMP
   const handleForceRefresh = async () => {
     try {
       setRefreshing(true);
       toast.info("Actualizando datos directamente desde SNMP ⏳");
 
-      const res = await fetch("http://localhost:4000/api/onus/force-refresh", {
+      const res = await fetch(`${API_BASE}/onus/force-refresh`, {
         method: "POST",
       });
       const data = await res.json();
@@ -73,7 +69,11 @@ const AllONUs: React.FC = () => {
     }
   };
 
-  // 🧠 Filtrar ONUs
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // 🔍 Filtrado dinámico
   useEffect(() => {
     let filtered = [...onus];
 
@@ -96,7 +96,7 @@ const AllONUs: React.FC = () => {
     setFilteredOnus(filtered);
   }, [selectedOlt, searchTerm, onus]);
 
-  // 🕓 Pantalla de carga
+  // ⏳ Pantalla de carga
   if (loading)
     return (
       <div className="flex justify-center items-center h-screen bg-gray-50">
@@ -111,14 +111,14 @@ const AllONUs: React.FC = () => {
     <div className="p-6 bg-gray-50 min-h-screen">
       <ToastContainer position="top-right" autoClose={2500} />
 
-      {/* ──────────────── Encabezado ──────────────── */}
+      {/* ─────────────── Encabezado ─────────────── */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
         <h1 className="text-2xl font-bold text-gray-800">
-          Todas las ONUs - SmartOLT
+          Todas las ONUs — SmartOLT
         </h1>
 
         <div className="flex flex-wrap items-center gap-3">
-          {/* 🏠 Botón para regresar al Dashboard */}
+          {/* 🏠 Volver al Dashboard */}
           <button
             onClick={() => navigate("/dashboard")}
             className="px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white font-semibold rounded-lg shadow-md transition-all"
@@ -126,7 +126,7 @@ const AllONUs: React.FC = () => {
             ⬅️ Volver al Dashboard
           </button>
 
-          {/* Filtro OLT */}
+          {/* 🟢 Filtro OLT */}
           <div className="flex items-center gap-2">
             <label className="text-gray-700 font-medium">OLT:</label>
             <select
@@ -140,7 +140,7 @@ const AllONUs: React.FC = () => {
             </select>
           </div>
 
-          {/* Buscador */}
+          {/* 🔍 Buscador */}
           <div className="relative">
             <input
               type="text"
@@ -152,7 +152,7 @@ const AllONUs: React.FC = () => {
             <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
           </div>
 
-          {/* Botón Refrescar */}
+          {/* 🔄 Botón Refrescar */}
           <button
             onClick={handleForceRefresh}
             disabled={refreshing}
@@ -167,7 +167,7 @@ const AllONUs: React.FC = () => {
         </div>
       </div>
 
-      {/* ──────────────── Tabla ──────────────── */}
+      {/* ─────────────── Tabla de ONUs ─────────────── */}
       <div className="overflow-x-auto bg-white rounded-2xl shadow-md border border-gray-200">
         <table className="min-w-full text-sm text-left text-gray-700">
           <thead className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
@@ -212,14 +212,16 @@ const AllONUs: React.FC = () => {
                       className={`px-3 py-1 rounded-full text-xs font-medium ${
                         onu.status?.toLowerCase() === "online"
                           ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-600"
+                          : onu.status?.toLowerCase() === "offline"
+                          ? "bg-red-100 text-red-600"
+                          : "bg-gray-100 text-gray-700"
                       }`}
                     >
                       {onu.status || "Desconocido"}
                     </span>
                   </td>
 
-                  {/* ✅ Botón Ver - Abre nueva ruta con detalle */}
+                  {/* 🔎 Botón Detalle */}
                   <td className="text-center">
                     <button
                       onClick={() =>

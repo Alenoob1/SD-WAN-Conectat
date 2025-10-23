@@ -15,16 +15,19 @@ function relativeTime(ts: number) {
 const StatusPage: React.FC = () => {
   const navigate = useNavigate();
 
-  // conexión socket creada una sola vez
-  const socket = useMemo<Socket>(() => io("http://localhost:4000", { autoConnect: true }), []);
+  // 🔹 Leer base URL del backend desde .env
+  const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:4000";
+
+  // Crear conexión Socket.io
+  const socket = useMemo<Socket>(() => io(API_BASE, { autoConnect: true }), [API_BASE]);
 
   const [trafico, setTrafico] = useState("0.00 Gbps");
   const [socketOk, setSocketOk] = useState<boolean>(false);
 
-  // Para “Última actualización …”
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
-  const [nowTick, setNowTick] = useState(0); // re-render periódico para refrescar el relativo
+  const [nowTick, setNowTick] = useState(0);
 
+  // 🎧 Escuchar eventos del socket
   useEffect(() => {
     const onConnect = () => {
       setSocketOk(true);
@@ -32,21 +35,20 @@ const StatusPage: React.FC = () => {
     };
     const onError = (err: any) => {
       setSocketOk(false);
-      console.error("❌ Socket error:", err?.message || err);
+      console.error("❌ Error socket:", err?.message || err);
     };
     const onDisconnect = () => {
       setSocketOk(false);
       console.warn("⚠️ Socket desconectado");
     };
     const onTrafico = (data: any) => {
-      // Backend envia {inGbps, outGbps, promedio}
       if (data?.promedio) {
         setTrafico(`${Number(data.promedio).toFixed(2)} Gbps`);
       } else if (data?.inGbps && data?.outGbps) {
         const avg = (Number(data.inGbps) + Number(data.outGbps)) / 2;
         setTrafico(`${avg.toFixed(2)} Gbps`);
       }
-      setLastUpdated(Date.now()); // ⬅️ registra la hora de actualización
+      setLastUpdated(Date.now());
     };
 
     socket.on("connect", onConnect);
@@ -65,34 +67,32 @@ const StatusPage: React.FC = () => {
     };
   }, [socket]);
 
-  // Plan B: si no hay socket, simula en el front cada 3s (1.00–1.50 Gbps)
+  // 🧠 Simulación si no hay conexión real al backend
   useEffect(() => {
-    if (socketOk) return; // si ya hay socket, no simular
+    if (socketOk) return;
     const id = setInterval(() => {
       const inGbps = 1 + Math.random() * 0.5;
       const outGbps = 1 + Math.random() * 0.5;
       const avg = (inGbps + outGbps) / 2;
       setTrafico(`${avg.toFixed(2)} Gbps`);
-      setLastUpdated(Date.now()); // ⬅️ registra actualización también en simulado
+      setLastUpdated(Date.now());
     }, 3000);
     return () => clearInterval(id);
   }, [socketOk]);
 
-  // Re-render cada 30s para refrescar el texto relativo
+  // 🕒 Re-render cada 30s para refrescar el tiempo relativo
   useEffect(() => {
     const id = setInterval(() => setNowTick((n) => n + 1), 30_000);
     return () => clearInterval(id);
   }, []);
 
-  // Navegación y enlaces
+  // 🔗 Navegación
   const handleXtream = () => window.open("http://192.168.99.253:25500/login.php", "_blank");
   const handleAstra = () => window.open("http://192.168.99.254:8000/#/", "_blank");
   const handleMikrotik = () => window.open("http://192.168.0.1", "_blank");
   const handleFact = () => window.open("https://conectatayd.fac.gt/signin", "_blank");
   const handleOLTs = () => navigate("/dashboard");
   const handleLogout = () => navigate("/login");
-
-  // 👉 Navegar a la página de Clientes Activos
   const goToClientesActivos = () => navigate("/clientes-activos");
 
   return (
@@ -113,18 +113,20 @@ const StatusPage: React.FC = () => {
           <h2 className="font-semibold text-base md:text-lg mt-2 text-gray-800 text-center">
             Alejandro Calel
           </h2>
-          <p className="text-[11px] md:text-xs text-blue-600 font-medium">Administrador de Red</p>
+          <p className="text-[11px] md:text-xs text-blue-600 font-medium">
+            Administrador de Red
+          </p>
         </div>
 
         {/* Navegación */}
         <nav className="flex flex-col gap-2 mt-2">
-          <button onClick={() => navigate("/home")} className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gradient-to-r hover:from-blue-500 hover:to-sky-400 hover:text-white transition-all text-sm md:text-base">🏠 <span className="font-medium">Inicio</span></button>
-          <button onClick={handleXtream} className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-400 hover:text-white transition-all text-sm md:text-base">📺 <span className="font-medium">Xtream IPTV</span></button>
-          <button onClick={handleAstra} className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gradient-to-r hover:from-rose-400 hover:to-red-400 hover:text-white transition-all text-sm md:text-base">🚀 <span className="font-medium">Astra</span></button>
-          <button onClick={handleMikrotik} className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gradient-to-r hover:from-blue-500 hover:to-sky-400 hover:text-white transition-all text-sm md:text-base">🌐 <span className="font-medium">Mikrotik SD-WAN</span></button>
-          <button onClick={handleFact} className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gradient-to-r hover:from-green-400 hover:to-emerald-500 hover:text-white transition-all text-sm md:text-base">💰 <span className="font-medium">Facturación</span></button>
-          <button onClick={handleOLTs} className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gradient-to-r hover:from-blue-400 hover:to-indigo-500 hover:text-white transition-all text-sm md:text-base">🛰️ <span className="font-medium">OLTs</span></button>
-          <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gradient-to-r hover:from-red-500 hover:to-rose-500 hover:text-white transition-all text-sm md:text-base">🔒 <span className="font-medium">Cerrar sesión</span></button>
+          <button onClick={() => navigate("/home")} className="nav-btn">🏠 Inicio</button>
+          <button onClick={handleXtream} className="nav-btn">📺 Xtream IPTV</button>
+          <button onClick={handleAstra} className="nav-btn">🚀 Astra</button>
+          <button onClick={handleMikrotik} className="nav-btn">🌐 Mikrotik SD-WAN</button>
+          <button onClick={handleFact} className="nav-btn">💰 Facturación</button>
+          <button onClick={handleOLTs} className="nav-btn">🛰️ OLTs</button>
+          <button onClick={handleLogout} className="nav-btn">🔒 Cerrar sesión</button>
         </nav>
 
         <div className="mt-auto text-[10px] md:text-xs text-center text-gray-500 pt-4 md:pt-6">
@@ -147,51 +149,54 @@ const StatusPage: React.FC = () => {
         </div>
 
         {/* Tarjetas */}
-       {/* Tarjetas */}
-<div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-  {[
-    { 
-      title: "Clientes Activos", 
-      value: "1,245", 
-      color: "from-blue-500 to-sky-400", 
-      icon: "👥", 
-      onClick: goToClientesActivos 
-    },
-    { 
-      title: "Tráfico Promedio", 
-      value: trafico, 
-      color: "from-green-400 to-emerald-500", 
-      icon: "📶", 
-      onClick: () => navigate("/trafico") // ✅ ahora sí redirige
-    },
-    { 
-  title: "Alarmas", 
-  value: "3", 
-  color: "from-rose-400 to-pink-500", 
-  icon: "🚨", 
-  onClick: () => navigate("/alarmas") 
-},
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+          {[
+            {
+              title: "Clientes Activos",
+              value: "1,245",
+              color: "from-blue-500 to-sky-400",
+              icon: "👥",
+              onClick: goToClientesActivos,
+            },
+            {
+              title: "Tráfico Promedio",
+              value: trafico,
+              color: "from-green-400 to-emerald-500",
+              icon: "📶",
+              onClick: () => navigate("/trafico"),
+            },
+            {
+              title: "Alarmas",
+              value: "3",
+              color: "from-rose-400 to-pink-500",
+              icon: "🚨",
+              onClick: () => navigate("/alarmas"),
+            },
+          ].map((stat, i) => (
+            <div
+              key={i}
+              onClick={stat.onClick}
+              className={`rounded-2xl bg-white/80 border border-gray-200 shadow-md p-6 transition-all duration-300 ${
+                stat.onClick
+                  ? "cursor-pointer hover:shadow-lg hover:-translate-y-1 hover:ring-2 hover:ring-blue-300"
+                  : ""
+              }`}
+            >
+              <div className="flex justify-between items-center mb-2">
+                <p className="uppercase text-xs font-semibold text-gray-500">
+                  {stat.title}
+                </p>
+                <span className="text-xl">{stat.icon}</span>
+              </div>
+              <h2
+                className={`text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r ${stat.color}`}
+              >
+                {stat.value}
+              </h2>
+            </div>
+          ))}
+        </div>
 
-  ].map((stat, i) => (
-    
-    <div
-      key={i}
-      onClick={stat.onClick as any}
-      className={`rounded-2xl bg-white/80 border border-gray-200 shadow-md transition-all duration-300 p-6
-        ${stat.onClick ? "cursor-pointer hover:shadow-lg hover:-translate-y-1 hover:ring-2 hover:ring-blue-300" : ""}`}
-    >
-      <div className="flex justify-between items-center mb-2">
-        <p className="uppercase text-xs font-semibold text-gray-500">{stat.title}</p>
-        <span className="text-xl">{stat.icon}</span>
-      </div>
-      <h2 className={`text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r ${stat.color} transition-all duration-500`}>
-        {stat.value}
-      </h2>
-    </div>
-  ))}
-</div>
-
-       
         {/* Tabla */}
         <section>
           <h2 className="text-xl md:text-2xl font-bold mb-4 text-blue-700 uppercase tracking-wide">
@@ -209,14 +214,42 @@ const StatusPage: React.FC = () => {
               </thead>
               <tbody>
                 {[
-                  { name: "OLT ZTE C300", ip: "192.168.99.253", status: "Online", ping: "24ms" },
-                  { name: "Router Mikrotik", ip: "192.168.0.1", status: "Online", ping: "15ms" },
-                  { name: "Xtream IPTV Server", ip: "192.168.99.254", status: "Online", ping: "10ms" },
+                  {
+                    name: "OLT ZTE C300",
+                    ip: "192.168.99.253",
+                    status: "Online",
+                    ping: "24ms",
+                  },
+                  {
+                    name: "Router Mikrotik",
+                    ip: "192.168.0.1",
+                    status: "Online",
+                    ping: "15ms",
+                  },
+                  {
+                    name: "Xtream IPTV Server",
+                    ip: "192.168.99.254",
+                    status: "Online",
+                    ping: "10ms",
+                  },
                 ].map((dev, i) => (
-                  <tr key={i} className="border-b border-gray-100 hover:bg-sky-50 transition-all duration-150">
-                    <td className="px-6 py-3 font-semibold text-gray-700">{dev.name}</td>
+                  <tr
+                    key={i}
+                    className="border-b border-gray-100 hover:bg-sky-50 transition-all duration-150"
+                  >
+                    <td className="px-6 py-3 font-semibold text-gray-700">
+                      {dev.name}
+                    </td>
                     <td className="px-6 py-3">{dev.ip}</td>
-                    <td className={`px-6 py-3 font-bold ${dev.status === "Online" ? "text-green-600" : "text-red-500"}`}>{dev.status}</td>
+                    <td
+                      className={`px-6 py-3 font-bold ${
+                        dev.status === "Online"
+                          ? "text-green-600"
+                          : "text-red-500"
+                      }`}
+                    >
+                      {dev.status}
+                    </td>
                     <td className="px-6 py-3 text-gray-600">{dev.ping}</td>
                   </tr>
                 ))}
