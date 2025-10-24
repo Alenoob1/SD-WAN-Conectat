@@ -1,358 +1,125 @@
-import React, { useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import React from "react";
+import { useNavigate } from "react-router-dom";
 
-type FormState = {
-  olt: string;
+type ONU = {
   pon_type: string;
   board: number | string;
   port: number | string;
   sn: string;
-  onu_type: string;
-  onu_mode: "Routing" | "Bridge";
-  vlan_id: number | string;
-  svlan: number | string;
-  zone: string;
-  odb_splitter: string;
-  odb_port: string;
-  download_speed: string;
-  upload_speed: string;
-  name: string;
-  address: string;
-  onu_external_id: string;
 };
 
-const AuthorizeOnu: React.FC = () => {
+const UnauthOnus: React.FC = () => {
   const navigate = useNavigate();
-  const { state: prefill } = useLocation() as { state?: any };
-  const { sn: snParam } = useParams();
 
-  const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000/api";
-
-  const [submitting, setSubmitting] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [message, setMessage] = useState<{ type: "ok" | "err" | "info"; text: string } | null>(null);
-  const [selectedOlt, setSelectedOlt] = useState("POAQUIL");
-
-  const [form, setForm] = useState<FormState>({
-    olt: prefill?.olt || "POAQUIL",
-    pon_type: (prefill?.ponType || "gpon").toLowerCase(),
-    board: prefill?.board ?? "",
-    port: prefill?.port ?? "",
-    sn: prefill?.sn || snParam || "",
-    onu_type: "CGG-F784CW",
-    onu_mode: "Routing",
-    vlan_id: "100",
-    svlan: "100",
-    zone: "City Centre",
-    odb_splitter: "None",
-    odb_port: "None",
-    download_speed: "1G",
-    upload_speed: "1G",
-    name: "",
-    address: "",
-    onu_external_id: prefill?.sn || "",
-  });
-
-  // 🔄 Cambio de OLT dinámico
-  const handleOltFilter = (olt: string) => {
-    setSelectedOlt(olt);
-    setForm((prev) => ({ ...prev, olt }));
-    setMessage({
-      type: "info",
-      text: `✅ Mostrando datos de la OLT ${olt}`,
-    });
-  };
-
-  const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setForm((f) => ({ ...f, [name]: value }));
-  };
-
-  // 🟢 Autorizar ONU
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMessage(null);
-    setSubmitting(true);
-
-    try {
-      const res = await fetch(`${API_BASE}/authorize`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          board: Number(form.board),
-          port: Number(form.port),
-          vlan_id: Number(form.vlan_id),
-          svlan: Number(form.svlan),
-        }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok && (data.status === true || data.success === true)) {
-        setMessage({ type: "ok", text: "✅ ONU autorizada correctamente." });
-      } else {
-        const msg = data?.error || data?.message || "Error desconocido en autorización";
-        setMessage({ type: "err", text: `❌ ${msg}` });
-      }
-    } catch (err: any) {
-      setMessage({ type: "err", text: `❌ Error de red: ${err?.message || err}` });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // 🔄 Refrescar datos SNMP
-  const handleSnmpRefresh = async () => {
-    setMessage(null);
-    setRefreshing(true);
-
-    try {
-      const res = await fetch(`${API_BASE}/onus/force-refresh`, {
-        method: "POST",
-      });
-      const data = await res.json();
-
-      if (data.status === true) {
-        setMessage({
-          type: "ok",
-          text: `✅ Caché actualizado. ONUs recargadas (${data.total || "sin conteo"})`,
-        });
-      } else {
-        setMessage({
-          type: "err",
-          text: `⚠️ ${data.message || "SmartOLT aún en límite horario o sin respuesta."}`,
-        });
-      }
-    } catch (err: any) {
-      setMessage({
-        type: "err",
-        text: `❌ Error al intentar refrescar datos desde SNMP: ${err?.message || err}`,
-      });
-    } finally {
-      setRefreshing(false);
-    }
-  };
+  // 📦 Ejemplo temporal de datos (reemplaza por tus datos reales)
+  const onus: ONU[] = [
+    { pon_type: "gpon", board: 6, port: 13, sn: "GPON00228D6" },
+    { pon_type: "gpon", board: 6, port: 6, sn: "HWTC0F8317A" },
+    { pon_type: "gpon", board: 6, port: 7, sn: "HWTC55A1BEA" },
+    { pon_type: "gpon", board: 4, port: 6, sn: "HWTC0E3CFCA" },
+    { pon_type: "gpon", board: 6, port: 8, sn: "GPON001F7D0" },
+    { pon_type: "gpon", board: 6, port: 12, sn: "ZTEG222942E" },
+  ];
 
   return (
-    <div className="min-h-screen bg-[#f4f6f9] p-3 sm:p-6 font-[Inter] overflow-y-auto flex justify-center">
-      <div className="w-full max-w-5xl bg-white border border-slate-200 rounded-2xl shadow-lg p-4 sm:p-8 md:p-10">
-        <h2 className="text-xl sm:text-2xl font-semibold text-[#334155] mb-4 sm:mb-6 flex items-center gap-2">
-          <span className="w-2 h-7 bg-[#38bdf8] rounded-sm"></span>
-          Autorizar ONU – <span className="text-[#1e293b] ml-1 font-bold">{form.sn}</span>
-        </h2>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 px-3 py-6 font-[Inter]">
+      <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 p-4 sm:p-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-700 mb-6 text-center">
+          ONUs <span className="text-sky-600">sin autorizar</span>
+        </h1>
 
-        {/* 🔘 Filtro de OLT */}
-        <div className="flex flex-wrap gap-3 mb-6">
-          {["POAQUIL", "COMALAPA"].map((olt) => (
-            <button
-              key={olt}
-              type="button"
-              onClick={() => handleOltFilter(olt)}
-              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                selectedOlt === olt
-                  ? "bg-sky-600 text-white shadow"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              {olt}
-            </button>
-          ))}
-        </div>
+        {/* 🔹 Filtros */}
+        <div className="flex flex-wrap gap-3 mb-6 justify-center">
+          <select className="border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-sky-400">
+            <option>Todos los OLTs</option>
+            <option>POAQUIL</option>
+            <option>COMALAPA</option>
+          </select>
 
-        {message && (
-          <div
-            className={`mb-6 rounded-lg px-4 py-3 text-sm ${
-              message.type === "ok"
-                ? "bg-green-50 text-green-700 border border-green-300"
-                : message.type === "info"
-                ? "bg-blue-50 text-blue-700 border border-blue-300"
-                : "bg-red-50 text-red-700 border border-red-300"
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
+          <select className="border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-sky-400">
+            <option>Any PON</option>
+            <option>PON1</option>
+            <option>PON2</option>
+          </select>
 
-        {/* 🔄 Botón de actualización SNMP */}
-        <div className="flex justify-end mb-5">
-          <button
-            type="button"
-            onClick={handleSnmpRefresh}
-            disabled={refreshing}
-            className={`px-4 py-2 rounded-lg font-semibold text-white text-sm transition-all ${
-              refreshing
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 shadow"
-            }`}
-          >
-            {refreshing ? "Actualizando..." : "🔄 Actualizar SNMP"}
+          <button className="bg-gradient-to-r from-sky-500 to-blue-600 text-white px-5 py-2 rounded-lg font-semibold text-sm shadow hover:from-sky-600 hover:to-blue-700 transition-all">
+            🔄 Actualizar
           </button>
         </div>
 
-        {/* 📋 Formulario responsive */}
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-          {[{ label: "OLT", value: form.olt }, { label: "PON Type", value: form.pon_type }, { label: "Board", value: form.board }, { label: "Port", value: form.port }, { label: "SN / MAC", value: form.sn }].map((f, i) => (
-            <div key={i}>
-              <label className="block text-sm font-medium text-gray-700">{f.label}</label>
-              <input
-                value={f.value}
-                readOnly
-                className="bg-gray-100 text-[#1e293b] border border-[#e2e8f0] rounded-lg p-2.5 w-full font-mono text-sm sm:text-base cursor-not-allowed"
-              />
+        {/* 🧾 Tabla para escritorio */}
+        <div className="hidden sm:block overflow-x-auto w-full rounded-xl shadow-sm border border-slate-200">
+          <table className="min-w-full text-sm text-slate-700">
+            <thead className="bg-sky-600 text-white text-left">
+              <tr>
+                <th className="px-4 py-2">#</th>
+                <th className="px-4 py-2">PON TYPE</th>
+                <th className="px-4 py-2">BOARD</th>
+                <th className="px-4 py-2">PORT</th>
+                <th className="px-4 py-2">SN / MAC</th>
+                <th className="px-4 py-2 text-center">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {onus.map((onu, i) => (
+                <tr
+                  key={onu.sn}
+                  className="hover:bg-sky-50 transition-colors border-b border-slate-100"
+                >
+                  <td className="px-4 py-2 font-medium text-slate-600">{i + 1}</td>
+                  <td className="px-4 py-2">{onu.pon_type}</td>
+                  <td className="px-4 py-2">{onu.board}</td>
+                  <td className="px-4 py-2">{onu.port}</td>
+                  <td className="px-4 py-2 font-mono text-blue-700">{onu.sn}</td>
+                  <td className="px-4 py-2 text-center">
+                    <button
+                      onClick={() => navigate(`/authorize/${onu.sn}`, { state: onu })}
+                      className="px-3 py-1.5 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-lg text-xs font-semibold hover:from-sky-600 hover:to-blue-700 transition-all"
+                    >
+                      Autorizar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* 📱 Tarjetas para móvil */}
+        <div className="grid grid-cols-1 sm:hidden gap-3 mt-4">
+          {onus.map((onu, i) => (
+            <div
+              key={onu.sn}
+              className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all"
+            >
+              <div className="flex justify-between mb-2">
+                <span className="text-sm font-semibold text-sky-600">
+                  #{i + 1} • {onu.pon_type.toUpperCase()}
+                </span>
+                <span className="text-xs text-slate-500">
+                  Board {onu.board} / Port {onu.port}
+                </span>
+              </div>
+              <p className="font-mono text-blue-700 break-all">{onu.sn}</p>
+              <button
+                onClick={() => navigate(`/authorize/${onu.sn}`, { state: onu })}
+                className="mt-3 w-full bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-md py-2 text-sm font-semibold hover:from-sky-600 hover:to-blue-700 transition-all"
+              >
+                Autorizar
+              </button>
             </div>
           ))}
+        </div>
 
-          {/* ONU Type */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">ONU Type</label>
-            <select
-              name="onu_type"
-              value={form.onu_type}
-              onChange={onChange}
-              className="bg-white border border-gray-300 rounded-lg p-2.5 w-full text-sm sm:text-base"
-            >
-              <option>CGG-F784CW</option>
-              <option>ZTE-F660V6.0</option>
-              <option>ZTE-F601</option>
-              <option>ZTE-F680</option>
-              <option>HUAWEI-HG8145V5</option>
-            </select>
-          </div>
-
-          {/* VLAN */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">User VLAN-ID</label>
-            <input
-              name="vlan_id"
-              type="number"
-              value={form.vlan_id}
-              onChange={onChange}
-              className="bg-white border border-gray-300 rounded-lg p-2.5 w-full text-sm sm:text-base"
-            />
-          </div>
-
-          {/* SVLAN */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Service VLAN (SVLAN-ID)</label>
-            <input
-              name="svlan"
-              type="number"
-              value={form.svlan}
-              onChange={onChange}
-              className="bg-white border border-gray-300 rounded-lg p-2.5 w-full text-sm sm:text-base"
-            />
-          </div>
-
-          {/* Zona */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Zone</label>
-            <select
-              name="zone"
-              value={form.zone}
-              onChange={onChange}
-              className="bg-white border border-gray-300 rounded-lg p-2.5 w-full text-sm sm:text-base"
-            >
-              <option>City Centre</option>
-              <option>Downtown</option>
-              <option>Village</option>
-            </select>
-          </div>
-
-          {/* Splitter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Splitter</label>
-            <select
-              name="odb_splitter"
-              value={form.odb_splitter}
-              onChange={onChange}
-              className="bg-white border border-gray-300 rounded-lg p-2.5 w-full text-sm sm:text-base"
-            >
-              <option>None</option>
-              <option>Splitter 1</option>
-              <option>Splitter 2</option>
-            </select>
-          </div>
-
-          {/* Velocidades */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Download Speed</label>
-            <select
-              name="download_speed"
-              value={form.download_speed}
-              onChange={onChange}
-              className="bg-white border border-gray-300 rounded-lg p-2.5 w-full text-sm sm:text-base"
-            >
-              <option>1G</option>
-              <option>500M</option>
-              <option>100M</option>
-              <option>10M</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Upload Speed</label>
-            <select
-              name="upload_speed"
-              value={form.upload_speed}
-              onChange={onChange}
-              className="bg-white border border-gray-300 rounded-lg p-2.5 w-full text-sm sm:text-base"
-            >
-              <option>1G</option>
-              <option>500M</option>
-              <option>100M</option>
-              <option>10M</option>
-            </select>
-          </div>
-
-          {/* Cliente */}
-          <div className="col-span-1 sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-700">Cliente</label>
-            <input
-              name="name"
-              type="text"
-              placeholder="Nombre del cliente"
-              value={form.name}
-              onChange={onChange}
-              className="bg-white border border-gray-300 rounded-lg p-2.5 w-full text-sm sm:text-base"
-            />
-          </div>
-
-          {/* Dirección */}
-          <div className="col-span-1 sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-700">Dirección o comentario</label>
-            <input
-              name="address"
-              type="text"
-              placeholder="Ej: Avenida 9, Zona 1"
-              value={form.address}
-              onChange={onChange}
-              className="bg-white border border-gray-300 rounded-lg p-2.5 w-full text-sm sm:text-base"
-            />
-          </div>
-
-          {/* Botones */}
-          <div className="col-span-1 sm:col-span-2 flex flex-col sm:flex-row justify-end gap-3 mt-4">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="px-5 py-2.5 rounded-lg border border-gray-300 text-[#334155] hover:bg-gray-100 transition-all w-full sm:w-auto"
-              disabled={submitting || refreshing}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2.5 rounded-lg bg-[#1e293b] text-white hover:bg-[#0f172a] transition-all disabled:opacity-60 w-full sm:w-auto"
-              disabled={submitting || refreshing}
-            >
-              {submitting ? "Autorizando..." : "Autorizar ONU"}
-            </button>
-          </div>
-        </form>
+        {/* ➕ Agregar ONU manualmente */}
+        <div className="mt-8 flex justify-center">
+          <button className="bg-sky-50 border border-sky-300 text-sky-700 font-semibold px-6 py-2 rounded-lg hover:bg-sky-100 transition-all">
+            + Agregar ONU manualmente
+          </button>
+        </div>
       </div>
     </div>
   );
 };
 
-export default AuthorizeOnu;
+export default UnauthOnus;
