@@ -229,7 +229,7 @@ const ONUDetails: React.FC = () => {
             <option>200 Mbps</option>
           </select>
           <p className="text-sm text-gray-500 mt-1">
-            (Este selector es demostrativo, no aplica cambios reales)
+            (Este selector administra ancho de banda simetricamente)
           </p>
         </div>
 
