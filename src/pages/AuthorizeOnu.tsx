@@ -29,6 +29,7 @@ const AuthorizeOnu: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
+  // 🧠 Estado inicial del formulario
   const [form, setForm] = useState<FormState>({
     olt: prefill?.olt || "POAQUIL",
     pon_type: (prefill?.ponType || "gpon").toLowerCase(),
@@ -49,19 +50,25 @@ const AuthorizeOnu: React.FC = () => {
     onu_external_id: prefill?.sn || "",
   });
 
+  // ✏️ Manejar cambios en los inputs
   const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
   };
 
+  // 🚀 Enviar formulario
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
     setSubmitting(true);
 
     try {
-      // ✅ URL del backend dinámico (Render)
-      const apiUrl = import.meta.env.VITE_API_BASE || "https://backend-sd-wan-1.onrender.com/api";
+      // ✅ URL del backend dinámico
+      const apiUrl =
+        import.meta.env.VITE_API_BASE?.trim() ||
+        "https://backend-sd-wan-1.onrender.com/api";
+
+      console.log("🌐 API BASE:", apiUrl); // 👀 Verifica que sea correcta
 
       const res = await fetch(`${apiUrl}/onus/authorize`, {
         method: "POST",
@@ -95,7 +102,8 @@ const AuthorizeOnu: React.FC = () => {
       <div className="w-full max-w-4xl bg-white border border-slate-200 rounded-2xl shadow-lg p-8">
         <h2 className="text-2xl font-semibold text-[#334155] mb-6 flex items-center gap-2">
           <span className="w-2 h-8 bg-[#38bdf8] rounded-sm"></span>
-          Autorizar ONU – <span className="text-[#1e293b] ml-1 font-bold">{form.sn}</span>
+          Autorizar ONU –{" "}
+          <span className="text-[#1e293b] ml-1 font-bold">{form.sn}</span>
         </h2>
 
         {message && (
@@ -111,8 +119,7 @@ const AuthorizeOnu: React.FC = () => {
         )}
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {[
-            { label: "OLT", value: form.olt },
+          {[{ label: "OLT", value: form.olt },
             { label: "PON Type", value: form.pon_type },
             { label: "Board", value: form.board },
             { label: "Port", value: form.port },
@@ -128,6 +135,7 @@ const AuthorizeOnu: React.FC = () => {
             </div>
           ))}
 
+          {/* ONU Type */}
           <div>
             <label className="block text-sm font-medium text-gray-700">ONU Type</label>
             <select
@@ -144,6 +152,7 @@ const AuthorizeOnu: React.FC = () => {
             </select>
           </div>
 
+          {/* VLANs */}
           <div>
             <label className="block text-sm font-medium text-gray-700">User VLAN-ID</label>
             <input
@@ -166,6 +175,7 @@ const AuthorizeOnu: React.FC = () => {
             />
           </div>
 
+          {/* Zone & Splitter */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Zone</label>
             <select
@@ -194,6 +204,7 @@ const AuthorizeOnu: React.FC = () => {
             </select>
           </div>
 
+          {/* Speed */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Download Speed</label>
             <select
@@ -224,6 +235,7 @@ const AuthorizeOnu: React.FC = () => {
             </select>
           </div>
 
+          {/* Cliente y dirección */}
           <div className="col-span-2">
             <label className="block text-sm font-medium text-gray-700">Cliente</label>
             <input
@@ -248,6 +260,7 @@ const AuthorizeOnu: React.FC = () => {
             />
           </div>
 
+          {/* Botones */}
           <div className="col-span-2 flex justify-end gap-3 mt-6">
             <button
               type="button"
