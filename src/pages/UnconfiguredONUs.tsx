@@ -18,8 +18,13 @@ const UnconfiguredONUs: React.FC = () => {
   const [selectedPON, setSelectedPON] = useState("Any PON");
   const navigate = useNavigate();
 
-  // 🌐 URL base desde variable global
-  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+  // 🌐 URL fija del backend en Render (sin localhost)
+  const API_BASE = "https://backend-sd-wan-1.onrender.com/api";
+
+  // 🧩 Log para verificar que Vercel use la versión correcta
+  useEffect(() => {
+    console.log("🌍 API usada por Vercel:", API_BASE);
+  }, []);
 
   // 🟢 Cargar ONUs sin autorizar
   useEffect(() => {
@@ -52,7 +57,7 @@ const UnconfiguredONUs: React.FC = () => {
     };
 
     loadUnconfiguredOnus();
-  }, [API_BASE]);
+  }, []);
 
   // 🧭 Redirigir al formulario de autorización
   const handleAuthorize = (onu: ONU) => {

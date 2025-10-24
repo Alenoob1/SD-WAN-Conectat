@@ -38,7 +38,7 @@ const AuthorizeOnu: React.FC = () => {
     onu_type: "CGG-F784CW",
     onu_mode: "Routing",
     vlan_id: "100",
-    svlan: "100",
+    svlan: "100", // 👈 agregado para SmartOLT
     zone: "City Centre",
     odb_splitter: "None",
     odb_port: "None",
@@ -60,12 +60,7 @@ const AuthorizeOnu: React.FC = () => {
     setSubmitting(true);
 
     try {
-      // 🔗 URL fija al backend de Render
-      const apiUrl = "https://backend-sd-wan-1.onrender.com/api";
-
-      console.log("🌍 Usando API:", apiUrl);
-
-      const res = await fetch(`${apiUrl}/onus/authorize`, {
+      const res = await fetch("http://localhost:4000/api/authorize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -73,7 +68,7 @@ const AuthorizeOnu: React.FC = () => {
           board: Number(form.board),
           port: Number(form.port),
           vlan_id: Number(form.vlan_id),
-          svlan: Number(form.svlan),
+          svlan: Number(form.svlan), // 👈 importante
         }),
       });
 
@@ -97,8 +92,7 @@ const AuthorizeOnu: React.FC = () => {
       <div className="w-full max-w-4xl bg-white border border-slate-200 rounded-2xl shadow-lg p-8">
         <h2 className="text-2xl font-semibold text-[#334155] mb-6 flex items-center gap-2">
           <span className="w-2 h-8 bg-[#38bdf8] rounded-sm"></span>
-          Autorizar ONU –{" "}
-          <span className="text-[#1e293b] ml-1 font-bold">{form.sn}</span>
+          Autorizar ONU – <span className="text-[#1e293b] ml-1 font-bold">{form.sn}</span>
         </h2>
 
         {message && (
@@ -114,7 +108,9 @@ const AuthorizeOnu: React.FC = () => {
         )}
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {[{ label: "OLT", value: form.olt },
+          {/* Campos bloqueados */}
+          {[
+            { label: "OLT", value: form.olt },
             { label: "PON Type", value: form.pon_type },
             { label: "Board", value: form.board },
             { label: "Port", value: form.port },
@@ -147,7 +143,7 @@ const AuthorizeOnu: React.FC = () => {
             </select>
           </div>
 
-          {/* VLAN */}
+          {/* VLAN ID */}
           <div>
             <label className="block text-sm font-medium text-gray-700">User VLAN-ID</label>
             <input
@@ -159,6 +155,7 @@ const AuthorizeOnu: React.FC = () => {
             />
           </div>
 
+          {/* SVLAN (nuevo campo agregado) */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Service VLAN (SVLAN-ID)</label>
             <input
@@ -170,7 +167,7 @@ const AuthorizeOnu: React.FC = () => {
             />
           </div>
 
-          {/* Zona y splitter */}
+          {/* Zona y Splitter */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Zone</label>
             <select
@@ -199,7 +196,7 @@ const AuthorizeOnu: React.FC = () => {
             </select>
           </div>
 
-          {/* Speeds */}
+          {/* Velocidades */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Download Speed</label>
             <select
@@ -230,7 +227,7 @@ const AuthorizeOnu: React.FC = () => {
             </select>
           </div>
 
-          {/* Cliente */}
+          {/* Cliente y dirección */}
           <div className="col-span-2">
             <label className="block text-sm font-medium text-gray-700">Cliente</label>
             <input
