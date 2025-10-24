@@ -28,7 +28,8 @@ const AuthorizeOnu: React.FC = () => {
   const { state: prefill } = useLocation() as { state?: any };
   const { sn: snParam } = useParams();
 
-  const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000/api";
+  // ✅ API base (Render o localhost)
+  const API_BASE = import.meta.env.VITE_API_BASE || "https://backend-sd-wan-1.onrender.com/api";
 
   const [submitting, setSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -55,14 +56,10 @@ const AuthorizeOnu: React.FC = () => {
     onu_external_id: prefill?.sn || "",
   });
 
-  // 🔄 Cambio de OLT dinámico
   const handleOltFilter = (olt: string) => {
     setSelectedOlt(olt);
     setForm((prev) => ({ ...prev, olt }));
-    setMessage({
-      type: "info",
-      text: `✅ Mostrando datos de la OLT ${olt}`,
-    });
+    setMessage({ type: "info", text: `✅ Mostrando datos de la OLT ${olt}` });
   };
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -77,7 +74,7 @@ const AuthorizeOnu: React.FC = () => {
     setSubmitting(true);
 
     try {
-      const res = await fetch(`${API_BASE}/authorize`, {
+      const res = await fetch(`${API_BASE}/onu/authorize_onu`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -94,11 +91,7 @@ const AuthorizeOnu: React.FC = () => {
       if (res.ok && (data.status === true || data.success === true)) {
         toast.success("✅ ONU autorizada correctamente", { autoClose: 1500 });
         setMessage({ type: "ok", text: "✅ ONU autorizada correctamente." });
-
-        // ⏳ Esperar y redirigir a OnlineONUs
-        setTimeout(() => {
-          navigate("/online-onus"); // <-- Ajusta esta ruta según tu router
-        }, 1600);
+        setTimeout(() => navigate("/online-onus"), 1600);
       } else {
         const msg = data?.error || data?.message || "Error desconocido en autorización";
         toast.error(`❌ ${msg}`, { autoClose: 2000 });
@@ -116,13 +109,9 @@ const AuthorizeOnu: React.FC = () => {
   const handleSnmpRefresh = async () => {
     setMessage(null);
     setRefreshing(true);
-
     try {
-      const res = await fetch(`${API_BASE}/onus/force-refresh`, {
-        method: "POST",
-      });
+      const res = await fetch(`${API_BASE}/onus/force-refresh`, { method: "POST" });
       const data = await res.json();
-
       if (data.status === true) {
         toast.success("🔄 Caché actualizado correctamente");
         setMessage({
@@ -130,17 +119,17 @@ const AuthorizeOnu: React.FC = () => {
           text: `✅ Caché actualizado. ONUs recargadas (${data.total || "sin conteo"})`,
         });
       } else {
-        toast.warn("⚠️ SmartOLT aún sin respuesta");
+        toast.warn("⚠️ SmartOLT sin respuesta");
         setMessage({
           type: "err",
-          text: `⚠️ ${data.message || "SmartOLT aún en límite horario o sin respuesta."}`,
+          text: `⚠️ ${data.message || "SmartOLT aún sin respuesta."}`,
         });
       }
     } catch (err: any) {
       toast.error(`❌ Error al refrescar: ${err?.message || err}`);
       setMessage({
         type: "err",
-        text: `❌ Error al intentar refrescar datos desde SNMP: ${err?.message || err}`,
+        text: `❌ Error al intentar refrescar datos: ${err?.message || err}`,
       });
     } finally {
       setRefreshing(false);
@@ -173,6 +162,7 @@ const AuthorizeOnu: React.FC = () => {
           ))}
         </div>
 
+        {/* Mensaje de estado */}
         {message && (
           <div
             className={`mb-6 rounded-lg px-4 py-3 text-sm ${
@@ -187,7 +177,7 @@ const AuthorizeOnu: React.FC = () => {
           </div>
         )}
 
-        {/* 🔄 Botón de actualización SNMP */}
+        {/* 🔄 Botón SNMP */}
         <div className="flex justify-end mb-5">
           <button
             type="button"
@@ -203,7 +193,7 @@ const AuthorizeOnu: React.FC = () => {
           </button>
         </div>
 
-        {/* 📋 Formulario responsive */}
+        {/* 📋 Formulario */}
         <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
           {[{ label: "OLT", value: form.olt }, { label: "PON Type", value: form.pon_type }, { label: "Board", value: form.board }, { label: "Port", value: form.port }, { label: "SN / MAC", value: form.sn }].map((f, i) => (
             <div key={i}>
@@ -216,7 +206,7 @@ const AuthorizeOnu: React.FC = () => {
             </div>
           ))}
 
-          {/* ONU Type */}
+          {/* Campos editables */}
           <div>
             <label className="block text-sm font-medium text-gray-700">ONU Type</label>
             <select
@@ -233,84 +223,44 @@ const AuthorizeOnu: React.FC = () => {
             </select>
           </div>
 
-          {/* VLAN */}
           <div>
             <label className="block text-sm font-medium text-gray-700">User VLAN-ID</label>
-            <input
-              name="vlan_id"
-              type="number"
-              value={form.vlan_id}
-              onChange={onChange}
-              className="bg-white border border-gray-300 rounded-lg p-2.5 w-full text-sm sm:text-base"
-            />
+            <input name="vlan_id" type="number" value={form.vlan_id} onChange={onChange} className="bg-white border border-gray-300 rounded-lg p-2.5 w-full" />
           </div>
-
-          {/* SVLAN */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Service VLAN (SVLAN-ID)</label>
-            <input
-              name="svlan"
-              type="number"
-              value={form.svlan}
-              onChange={onChange}
-              className="bg-white border border-gray-300 rounded-lg p-2.5 w-full text-sm sm:text-base"
-            />
+            <input name="svlan" type="number" value={form.svlan} onChange={onChange} className="bg-white border border-gray-300 rounded-lg p-2.5 w-full" />
           </div>
 
-          {/* Zona */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Zone</label>
-            <select
-              name="zone"
-              value={form.zone}
-              onChange={onChange}
-              className="bg-white border border-gray-300 rounded-lg p-2.5 w-full text-sm sm:text-base"
-            >
+            <select name="zone" value={form.zone} onChange={onChange} className="bg-white border border-gray-300 rounded-lg p-2.5 w-full">
               <option>City Centre</option>
               <option>Downtown</option>
               <option>Village</option>
             </select>
           </div>
-
-          {/* Splitter */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Splitter</label>
-            <select
-              name="odb_splitter"
-              value={form.odb_splitter}
-              onChange={onChange}
-              className="bg-white border border-gray-300 rounded-lg p-2.5 w-full text-sm sm:text-base"
-            >
+            <select name="odb_splitter" value={form.odb_splitter} onChange={onChange} className="bg-white border border-gray-300 rounded-lg p-2.5 w-full">
               <option>None</option>
               <option>Splitter 1</option>
               <option>Splitter 2</option>
             </select>
           </div>
 
-          {/* Velocidades */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Download Speed</label>
-            <select
-              name="download_speed"
-              value={form.download_speed}
-              onChange={onChange}
-              className="bg-white border border-gray-300 rounded-lg p-2.5 w-full text-sm sm:text-base"
-            >
+            <select name="download_speed" value={form.download_speed} onChange={onChange} className="bg-white border border-gray-300 rounded-lg p-2.5 w-full">
               <option>1G</option>
               <option>500M</option>
               <option>100M</option>
               <option>10M</option>
             </select>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700">Upload Speed</label>
-            <select
-              name="upload_speed"
-              value={form.upload_speed}
-              onChange={onChange}
-              className="bg-white border border-gray-300 rounded-lg p-2.5 w-full text-sm sm:text-base"
-            >
+            <select name="upload_speed" value={form.upload_speed} onChange={onChange} className="bg-white border border-gray-300 rounded-lg p-2.5 w-full">
               <option>1G</option>
               <option>500M</option>
               <option>100M</option>
@@ -318,33 +268,15 @@ const AuthorizeOnu: React.FC = () => {
             </select>
           </div>
 
-          {/* Cliente */}
           <div className="col-span-1 sm:col-span-2">
             <label className="block text-sm font-medium text-gray-700">Cliente</label>
-            <input
-              name="name"
-              type="text"
-              placeholder="Nombre del cliente"
-              value={form.name}
-              onChange={onChange}
-              className="bg-white border border-gray-300 rounded-lg p-2.5 w-full text-sm sm:text-base"
-            />
+            <input name="name" type="text" placeholder="Nombre del cliente" value={form.name} onChange={onChange} className="bg-white border border-gray-300 rounded-lg p-2.5 w-full" />
           </div>
-
-          {/* Dirección */}
           <div className="col-span-1 sm:col-span-2">
             <label className="block text-sm font-medium text-gray-700">Dirección o comentario</label>
-            <input
-              name="address"
-              type="text"
-              placeholder="Ej: Avenida 9, Zona 1"
-              value={form.address}
-              onChange={onChange}
-              className="bg-white border border-gray-300 rounded-lg p-2.5 w-full text-sm sm:text-base"
-            />
+            <input name="address" type="text" placeholder="Ej: Avenida 9, Zona 1" value={form.address} onChange={onChange} className="bg-white border border-gray-300 rounded-lg p-2.5 w-full" />
           </div>
 
-          {/* Botones */}
           <div className="col-span-1 sm:col-span-2 flex flex-col sm:flex-row justify-end gap-3 mt-4">
             <button
               type="button"
@@ -364,8 +296,6 @@ const AuthorizeOnu: React.FC = () => {
           </div>
         </form>
       </div>
-
-      {/* 🧭 Toasts */}
       <ToastContainer position="bottom-right" theme="colored" />
     </div>
   );
