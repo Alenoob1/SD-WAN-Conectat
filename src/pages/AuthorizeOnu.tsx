@@ -135,8 +135,8 @@ const AuthorizeOnu: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f6f9] flex items-center justify-center p-3 sm:p-6 font-[Inter]">
-      <div className="w-full max-w-5xl bg-white border border-slate-200 rounded-2xl shadow-lg p-5 sm:p-8">
+    <div className="min-h-screen bg-[#f4f6f9] p-3 sm:p-6 font-[Inter] overflow-y-auto flex justify-center">
+      <div className="w-full max-w-5xl bg-white border border-slate-200 rounded-2xl shadow-lg p-4 sm:p-8 md:p-10">
         <h2 className="text-xl sm:text-2xl font-semibold text-[#334155] mb-4 sm:mb-6 flex items-center gap-2">
           <span className="w-2 h-7 bg-[#38bdf8] rounded-sm"></span>
           Autorizar ONU – <span className="text-[#1e293b] ml-1 font-bold">{form.sn}</span>
