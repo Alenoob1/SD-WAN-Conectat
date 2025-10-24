@@ -29,7 +29,6 @@ const AuthorizeOnu: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
-  // 🧠 Estado inicial del formulario
   const [form, setForm] = useState<FormState>({
     olt: prefill?.olt || "POAQUIL",
     pon_type: (prefill?.ponType || "gpon").toLowerCase(),
@@ -50,25 +49,21 @@ const AuthorizeOnu: React.FC = () => {
     onu_external_id: prefill?.sn || "",
   });
 
-  // ✏️ Manejar cambios en los inputs
   const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
   };
 
-  // 🚀 Enviar formulario
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
     setSubmitting(true);
 
     try {
-      // ✅ URL del backend dinámico
-      const apiUrl =
-        import.meta.env.VITE_API_BASE?.trim() ||
-        "https://backend-sd-wan-1.onrender.com/api";
+      // 🔗 URL fija al backend de Render
+      const apiUrl = "https://backend-sd-wan-1.onrender.com/api";
 
-      console.log("🌐 API BASE:", apiUrl); // 👀 Verifica que sea correcta
+      console.log("🌍 Usando API:", apiUrl);
 
       const res = await fetch(`${apiUrl}/onus/authorize`, {
         method: "POST",
@@ -152,7 +147,7 @@ const AuthorizeOnu: React.FC = () => {
             </select>
           </div>
 
-          {/* VLANs */}
+          {/* VLAN */}
           <div>
             <label className="block text-sm font-medium text-gray-700">User VLAN-ID</label>
             <input
@@ -175,7 +170,7 @@ const AuthorizeOnu: React.FC = () => {
             />
           </div>
 
-          {/* Zone & Splitter */}
+          {/* Zona y splitter */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Zone</label>
             <select
@@ -204,7 +199,7 @@ const AuthorizeOnu: React.FC = () => {
             </select>
           </div>
 
-          {/* Speed */}
+          {/* Speeds */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Download Speed</label>
             <select
@@ -235,7 +230,7 @@ const AuthorizeOnu: React.FC = () => {
             </select>
           </div>
 
-          {/* Cliente y dirección */}
+          {/* Cliente */}
           <div className="col-span-2">
             <label className="block text-sm font-medium text-gray-700">Cliente</label>
             <input
