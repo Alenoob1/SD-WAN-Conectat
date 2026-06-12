@@ -27,6 +27,8 @@ export const NetworkChatbot: React.FC = () => {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const hasApiKey = !!(import.meta.env.VITE_OPENAI_API_KEY || "").trim();
+
   // 🔌 Cargar historial de chat al iniciar
   useEffect(() => {
     const savedHistory = localStorage.getItem("alesmart_chat_history");
@@ -319,6 +321,21 @@ Apoya al administrador de red de la empresa 'AleSmart' para realizar diagnóstic
 
           {/* CUERPO DEL CHAT */}
           <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-slate-900/40 relative">
+            {/* Advertencia si no hay API Key */}
+            {!hasApiKey && (
+              <div className="bg-amber-950/40 border border-amber-500/30 rounded-xl p-3 text-xs text-amber-200/95 space-y-1.5 shadow-sm">
+                <span className="font-bold flex items-center gap-1.5 text-amber-400">
+                  ⚠️ API Key no configurada
+                </span>
+                <p className="leading-relaxed">
+                  NetBot requiere una clave API de OpenAI para responder consultas.
+                </p>
+                <div className="text-[10px] text-amber-300/80 bg-amber-950/60 p-2 rounded border border-amber-500/10 font-mono">
+                  En producción: Agrégala como variable <code className="bg-slate-900 px-1 py-0.5 rounded text-cyan-400 font-semibold">VITE_OPENAI_API_KEY</code> en tu panel de Vercel y redespliega.
+                </div>
+              </div>
+            )}
+
             {/* Mensajes del chat */}
             {messages.map((m) => (
               <div
@@ -355,7 +372,7 @@ Apoya al administrador de red de la empresa 'AleSmart' para realizar diagnóstic
           </div>
 
           {/* SUGERENCIAS RÁPIDAS */}
-          {messages.length <= 1 && (
+          {messages.length <= 1 && hasApiKey && (
             <div className="px-4 py-2 bg-slate-950/30 border-t border-slate-800/50 flex flex-wrap gap-1.5 max-h-36 overflow-y-auto font-sans">
               <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider w-full mb-1">
                 Consultas sugeridas:
@@ -384,13 +401,13 @@ Apoya al administrador de red de la empresa 'AleSmart' para realizar diagnóstic
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Escribe tu consulta de telecom..."
-              disabled={loading}
+              placeholder={hasApiKey ? "Escribe tu consulta de telecom..." : "⚠️ Configura VITE_OPENAI_API_KEY en Vercel..."}
+              disabled={loading || !hasApiKey}
               className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed placeholder-slate-500"
             />
             <button
               type="submit"
-              disabled={!input.trim() || loading}
+              disabled={!input.trim() || loading || !hasApiKey}
               className="p-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
             >
               <FaPaperPlane size={12} />

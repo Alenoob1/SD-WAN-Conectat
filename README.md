@@ -1,6 +1,29 @@
-# React + TypeScript + Vite
+# AleSmart - SD-WAN & OLT Monitoring
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## ⚙️ Configuración de Variables de Entorno
+
+Este proyecto requiere variables de entorno para comunicarse con el Backend y el chatbot (OpenAI). 
+
+### 1. Desarrollo Local
+Crea un archivo `.env` en la raíz del proyecto `alesmart/` (este archivo está ignorado en Git para tu seguridad) y agrega las siguientes variables:
+
+```env
+VITE_API_URL=https://backend-sd-wan-1.onrender.com/api
+VITE_OPENAI_API_KEY=tu_clave_de_openai_aqui
+```
+
+### 2. Producción (Despliegue en Vercel)
+Para que el chatbot y las llamadas de API funcionen en producción, debes configurar estas variables en el panel de control de Vercel:
+
+1. Ve a **Settings** > **Environment Variables** en tu proyecto de Vercel.
+2. Agrega las siguientes claves:
+   - `VITE_API_URL` con el enlace de tu backend.
+   - `VITE_OPENAI_API_KEY` con tu clave de OpenAI.
+3. **Importante:** Realiza un **Redeploy** de la aplicación para que Vite compile el código con las nuevas variables.
+
+---
+
+# React + TypeScript + Vite
 
 Currently, two official plugins are available:
 
