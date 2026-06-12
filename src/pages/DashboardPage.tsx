@@ -18,6 +18,7 @@ import {
   FaExclamationTriangle,
   FaHome,
 } from "react-icons/fa";
+import { NetworkChatbot } from "../components/NetworkChatbot";
 
 ChartJS.register(
   LineElement,
@@ -306,6 +307,7 @@ const Dashboard: React.FC = () => {
           v2.7.1 | © 2025 AleSmart | SD-WAN & OLT Monitoring
         </footer>
       </div>
+      <NetworkChatbot />
     </div>
   );
 };

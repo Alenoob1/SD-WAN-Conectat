@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { io, Socket } from "socket.io-client";
 import userPhoto from "../assets/spyese.jpg";
+import { NetworkChatbot } from "../components/NetworkChatbot";
 
 // Helper para tiempo relativo
 function relativeTime(ts: number) {
@@ -258,6 +259,7 @@ const StatusPage: React.FC = () => {
           </div>
         </section>
       </main>
+      <NetworkChatbot />
     </div>
   );
 };
