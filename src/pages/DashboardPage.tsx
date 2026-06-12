@@ -39,7 +39,7 @@ interface OLT {
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const API_BASE = import.meta.env.VITE_API_URL; // ✅ variable global
+  const API_BASE = import.meta.env.VITE_API_URL || "https://backend-sd-wan-1.onrender.com/api"; // ✅ variable global
 
   const [stats, setStats] = useState({
     waiting: 0,

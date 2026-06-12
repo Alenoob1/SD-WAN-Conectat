@@ -19,7 +19,7 @@ type ONU = {
 
 const AllONUs: React.FC = () => {
   // 🔧 Variable global de entorno
-  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+  const API_BASE = import.meta.env.VITE_API_URL || "https://backend-sd-wan-1.onrender.com/api";
 
   const [onus, setOnus] = useState<ONU[]>([]);
   const [filteredOnus, setFilteredOnus] = useState<ONU[]>([]);

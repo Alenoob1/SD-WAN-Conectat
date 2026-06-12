@@ -17,7 +17,7 @@ const StatusPage: React.FC = () => {
   const navigate = useNavigate();
 
   // 🔹 Leer base URL del backend desde .env
-  const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:4000";
+  const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "https://backend-sd-wan-1.onrender.com";
 
   // Crear conexión Socket.io
   const socket = useMemo<Socket>(() => io(API_BASE, { autoConnect: true }), [API_BASE]);
